@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的小工具</title>
+    <style>
+        *{
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+        }
+        h1{font-size: 30px;}
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            gap: 80px;
+        }
+        #toolContainer {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+        @media screen and (min-width: 480px) {
+            #toolContainer{
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 30px;
+            }
+        }
+        .theTool a{
+            font-size: 24px;
+            font-weight: 800;
+            text-decoration: none;
+            width: 200px;
+            height: 50px;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>欢迎来到我的小工具</h1>
+    <div id="toolContainer">
+        <div class="theTool">
+            <a href="countdown.html">倒计时工具</a>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>倒计时</title>
+    <style>
+        *{
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+        }
+        h1{font-size: 30px;}
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            gap: 80px;
+        }
+        @media screen and (min-width: 480px) {
+            body{
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 30px;
+            }
+        }
+
+
+        .countdown {
+            display: flex;
+            flex-direction: column;
+            max-width: 400px;
+            width: 100%;
+            gap: 20px;
+        }
+        .timeInput, .input-message, .btn, .countdown-display {
+            font-size: 30px;
+            height: 50px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        .timeInput {
+            flex-direction: column;
+            height: auto;
+            gap: 20px;
+            font-size: 20px;
+        }
+        .timeInput div, .afterBegain {
+            display: flex;
+            flex-wrap: nowrap;
+            text-wrap: nowrap;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            gap: 3px;
+        }
+        .hour, .min, .sec {
+            min-width: 45px;
+            height: 30px;
+            font-size: 20px;
+            text-align: center;
+        }
+        .range {
+            width: 100%;
+            height: 50px;
+            margin: 0 auto;
+        }
+         .countdown-display {
+            height: 60px;
+            background-color: #f0f0f0;
+            color: #852626;
+        }
+        .input-message {
+            width: 100%;
+            margin: 0 auto;
+            padding: 0 10px;
+            border: #f0f0f0 solid 1px;
+        }
+        .btn {
+            width: 100%;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .hidden {
+            display: none;
+        }
+        .stopbtn {
+            background-color: #ff8980;
+        }
+    </style>
+</head>
+<body>
+    <div id="countdown_1" class="countdown">
+        <h1>倒计时⏳</h1>
+        <div class="timeInput">
+            <div>
+                <input type="number" class="hour" value="0" min="0" max="99">小时
+                <input type="number" class="min" value="0" min="0" max="59">分钟
+                <input type="number" class="sec" value="0" min="0" max="59">秒
+            </div>
+            <input type="range" class="range" min="0" max="3600" value="0" oninput="updateRange(event)">
+        </div>
+        <div class="afterBegain">
+            <input type="text" placeholder="计时事件" class="input-message">
+            <div class="countdown-display hidden"></div>
+        </div>
+        <button onclick="begainCount(event)" class="btn">开始</button>
+    </div>
+
+    <script>
+        const start = {};
+        const countdown = {};
+        function begainCount (e) {
+            const thisCountdown = e.target.closest('.countdown');
+            const countid = thisCountdown.id;
+            start[countid] = !start[countid];
+            const countnum = document.querySelectorAll('.countdown').length;
+            if (start[countid] && countid.split('_')[1] == countnum){addcountdown()}
+            const timeInput = thisCountdown.querySelector('.timeInput');
+            const messageInput = thisCountdown.querySelector('.input-message');
+            thisCountdown.querySelector('h1').classList.toggle('hidden');
+            thisCountdown.querySelector('.timeInput').classList.toggle('hidden');
+            thisCountdown.querySelector('.btn').classList.toggle('stopbtn');
+            thisCountdown.querySelector('.countdown-display').classList.toggle('hidden');
+            if (start[countid]){
+                console.log('start');
+                e.target.innerHTML = '停止';
+                console.log(e.target);
+                const inputHours = thisCountdown.querySelector('.hour').value;
+                const inputMin = thisCountdown.querySelector('.min').value;
+                const inputSec = thisCountdown.querySelector('.sec').value;
+                const totalSeconds = inputHours * 3600 + inputMin * 60 + inputSec * 1;
+                const begainTime = new Date();
+                thisCountdown.querySelector('.countdown-display').innerHTML = '正在倒计时...';
+                countdown[countid] = setInterval( () => {
+                    const now = new Date();
+                    const diff = now - begainTime;
+                    console.log(diff);
+                    const seconds = Math.floor(totalSeconds - diff / 1000);
+                    const minutes = Math.floor(seconds / 60);
+                    const hours = Math.floor(minutes / 60);
+
+                    thisCountdown.querySelector('.countdown-display').innerHTML = `${hours}h ${minutes % 60}m ${seconds % 60}s`;
+                    if (seconds <= 0) {
+                        clearInterval(countdown[countid]);
+                        delete countdown[countid];
+                        thisCountdown.querySelector('.countdown-display').innerHTML = messageInput.value || '时间到！';
+                        start[countid] = false;
+                        e.target.innerHTML = '开始';
+                        alert(messageInput.value || '时间到！');
+                        thisCountdown.querySelector('h1').classList.toggle('hidden');
+                        thisCountdown.querySelector('.timeInput').classList.toggle('hidden');
+                        thisCountdown.querySelector('.btn').classList.toggle('stopbtn');
+                        thisCountdown.querySelector('.countdown-display').classList.toggle('hidden');
+                    }
+                }, 1000);
+            }else {
+                e.target.innerHTML = '开始';
+                console.log('清除倒计时');
+                thisCountdown.querySelector('.countdown-display').innerHTML = '';
+                console.log(countdown);
+                clearInterval(countdown[countid]);
+                delete countdown[countid];
+                start[countid] = false;
+            }
+        };
+
+        function updateRange(e) {
+            const rangeValue = e.target.value;
+            const timeInput = e.target.parentElement;
+            timeInput.querySelector('.hour').value = Math.floor(rangeValue / 3600);
+            timeInput.querySelector('.min').value = Math.floor((rangeValue % 3600) / 60);
+            timeInput.querySelector('.sec').value = rangeValue % 60;
+        }
+
+        function addcountdown(){
+            const newCountdown = document.createElement('div');
+            const count = document.querySelectorAll('.countdown').length + 1;
+            newCountdown.id = `countdown_${count}`;
+            newCountdown.classList.add('countdown');
+            newCountdown.innerHTML = `
+                <h1>倒计时⏳${count}</h1>
+                <div class="timeInput">
+                    <div>
+                        <input type="number" class="hour" value="0" min="0" max="99">小时
+                        <input type="number" class="min" value="0" min="0" max="59">分钟
+                        <input type="number" class="sec" value="0" min="0" max="59">秒
+                    </div>
+                    <input type="range" class="range" min="0" max="3600" value="0" oninput="updateRange(event)">
+                </div>
+                <div class="afterBegain">
+                    <input type="text" placeholder="计时事件" class="input-message">
+                    <div class="countdown-display hidden"></div>
+                </div>
+                <button onclick="begainCount(event)" class="btn">开始</button>
+            `;
+            document.body.appendChild(newCountdown);
+        }
+    </script>
+</body>
+</html>
