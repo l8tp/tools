@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="manifest.json"/>
     <title>倒计时</title>
     <style>
         *{
@@ -18,24 +19,53 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            min-height: 100vh;
             padding: 20px;
-            gap: 80px;
+            gap: 20px;
+        }
+
+        #countdownarea{
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
         }
         @media screen and (min-width: 480px) {
-            body{
+            #countdownarea{
                 flex-direction: row;
                 flex-wrap: wrap;
                 gap: 30px;
             }
         }
 
-
+        .remind{
+            position: fixed;
+            top: 50%;
+            z-index: 1000;
+            width: 300px;
+            min-height: 100px;
+            background-color: #ffff00;
+            border-radius: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            font-size: 25px;
+            font-weight: 600;
+        }
+        .remind p::after{
+            content: "❌";
+        }
         .countdown {
+            background-color: #eeeeee72;
+            border-radius: 20px;
             display: flex;
             flex-direction: column;
             max-width: 400px;
             width: 100%;
-            gap: 20px;
+            gap: 12px;
         }
         .timeInput, .input-message, .btn, .countdown-display {
             font-size: 30px;
@@ -49,7 +79,7 @@
         .timeInput {
             flex-direction: column;
             height: auto;
-            gap: 20px;
+            gap: 12px;
             font-size: 20px;
         }
         .timeInput div, .afterBegain {
@@ -69,7 +99,7 @@
         }
         .range {
             width: 100%;
-            height: 50px;
+            height: 20px;
             margin: 0 auto;
         }
          .countdown-display {
@@ -85,7 +115,7 @@
         }
         .btn {
             width: 100%;
-            background-color: #4CAF50;
+            background-color: #428543;
             color: white;
             border: none;
             cursor: pointer;
@@ -99,21 +129,25 @@
     </style>
 </head>
 <body>
-    <div id="countdown_1" class="countdown">
-        <h1>倒计时⏳</h1>
-        <div class="timeInput">
-            <div>
-                <input type="number" class="hour" value="0" min="0" max="99">小时
-                <input type="number" class="min" value="0" min="0" max="59">分钟
-                <input type="number" class="sec" value="0" min="0" max="59">秒
+    <div id="message" class="message"></div>
+    <div id="remind" class="remind hidden"></div>
+    <div id="countdownarea">
+        <div id="countdown_1" class="countdown">
+            <h1>倒计时⏳</h1>
+            <div class="timeInput">
+                <div>
+                    <input type="number" class="hour" value="0" min="0" max="99" autocomplete="off">小时
+                    <input type="number" class="min" value="0" min="0" max="59" autocomplete="off">分钟
+                    <input type="number" class="sec" value="0" min="0" max="59" autocomplete="off">秒
+                </div>
+                <input type="range" class="range" min="0" max="3600" value="0" oninput="updateRange(event)">
             </div>
-            <input type="range" class="range" min="0" max="3600" value="0" oninput="updateRange(event)">
+            <div class="afterBegain">
+                <input type="text" placeholder="请输入事件" class="input-message">
+                <div class="countdown-display hidden"></div>
+            </div>
+            <button onclick="begainCount(event)" class="btn">开始</button>
         </div>
-        <div class="afterBegain">
-            <input type="text" placeholder="计时事件" class="input-message">
-            <div class="countdown-display hidden"></div>
-        </div>
-        <button onclick="begainCount(event)" class="btn">开始</button>
     </div>
 
     <script>
@@ -132,9 +166,7 @@
             thisCountdown.querySelector('.btn').classList.toggle('stopbtn');
             thisCountdown.querySelector('.countdown-display').classList.toggle('hidden');
             if (start[countid]){
-                console.log('start');
                 e.target.innerHTML = '停止';
-                console.log(e.target);
                 const inputHours = thisCountdown.querySelector('.hour').value;
                 const inputMin = thisCountdown.querySelector('.min').value;
                 const inputSec = thisCountdown.querySelector('.sec').value;
@@ -144,7 +176,6 @@
                 countdown[countid] = setInterval( () => {
                     const now = new Date();
                     const diff = now - begainTime;
-                    console.log(diff);
                     const seconds = Math.floor(totalSeconds - diff / 1000);
                     const minutes = Math.floor(seconds / 60);
                     const hours = Math.floor(minutes / 60);
@@ -156,7 +187,7 @@
                         thisCountdown.querySelector('.countdown-display').innerHTML = messageInput.value || '时间到！';
                         start[countid] = false;
                         e.target.innerHTML = '开始';
-                        alert(messageInput.value || '时间到！');
+                        showRemind(messageInput, countid);
                         thisCountdown.querySelector('h1').classList.toggle('hidden');
                         thisCountdown.querySelector('.timeInput').classList.toggle('hidden');
                         thisCountdown.querySelector('.btn').classList.toggle('stopbtn');
@@ -167,12 +198,34 @@
                 e.target.innerHTML = '开始';
                 console.log('清除倒计时');
                 thisCountdown.querySelector('.countdown-display').innerHTML = '';
-                console.log(countdown);
                 clearInterval(countdown[countid]);
                 delete countdown[countid];
                 start[countid] = false;
             }
         };
+
+        let audio;
+        async function showRemind (messageInput, countid){
+            const remind = document.getElementById('remind');
+            const ps = remind.querySelectorAll('p');
+            if(ps.length < 1){
+                audio = new Audio('sound.mp3');
+                await audio.play();
+            }
+            const p = document.createElement('p');
+            p.innerHTML = messageInput.value || '时间到！';
+            p.classList.add(countid);
+            remind.appendChild(p);
+            p.addEventListener('click', ()=>{
+                p.remove();
+                const psnow = remind.querySelectorAll('p');
+                if(psnow.length < 1){
+                    remind.classList.add('hidden');
+                    audio.pause();
+                }
+            })
+            remind.classList.remove('hidden');
+        }
 
         function updateRange(e) {
             const rangeValue = e.target.value;
@@ -191,20 +244,49 @@
                 <h1>倒计时⏳${count}</h1>
                 <div class="timeInput">
                     <div>
-                        <input type="number" class="hour" value="0" min="0" max="99">小时
-                        <input type="number" class="min" value="0" min="0" max="59">分钟
-                        <input type="number" class="sec" value="0" min="0" max="59">秒
+                        <input type="number" class="hour" value="0" min="0" max="99" autocomplete="off">小时
+                        <input type="number" class="min" value="0" min="0" max="59" autocomplete="off">分钟
+                        <input type="number" class="sec" value="0" min="0" max="59" autocomplete="off">秒
                     </div>
                     <input type="range" class="range" min="0" max="3600" value="0" oninput="updateRange(event)">
                 </div>
                 <div class="afterBegain">
-                    <input type="text" placeholder="计时事件" class="input-message">
+                    <input type="text" placeholder="请输入事件" class="input-message">
                     <div class="countdown-display hidden"></div>
                 </div>
                 <button onclick="begainCount(event)" class="btn">开始</button>
             `;
-            document.body.appendChild(newCountdown);
+            document.querySelector('#countdownarea').appendChild(newCountdown);
         }
+
+        window.addEventListener('load', async () => {
+            if('serviceWorker' in navigator) {
+                try{
+                    const registration = await navigator.serviceWorker.register('sw.js')
+                }catch(err){
+                    console.log(err)
+                }
+            }else{
+                console.log('浏览器不支持service worker注册失败')
+            }
+            if(!navigator.onLine){
+                message('本页面采用PWA技术，没有网络也能使用') 
+                new Notification('提示', {body: '本页面采用PWA技术，没有网络也能使用'});
+            }
+            window.addEventListener('online', ()=>{
+                message('网络已连接') 
+                new Notification('提示', {body: '网络已连接'});
+            })
+        });
+
+        let timer;
+        function message(info){
+            const message = document.getElementById('message');
+            message.innerHTML = info;
+            clearTimeout(timer);
+            timer = setTimeout(()=>{message.innerHTML = ''},3000);
+        }
+
     </script>
 </body>
 </html>
