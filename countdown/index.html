@@ -204,13 +204,14 @@
             }
         };
 
-        let audio;
+        const audio = new Audio('sound.mp3');
+        audio.load();
+        audio.loop = true;
         async function showRemind (messageInput, countid){
             const remind = document.getElementById('remind');
             const ps = remind.querySelectorAll('p');
             if(ps.length < 1){
-                audio = new Audio('sound.mp3');
-                await audio.play();
+                audio.play();
             }
             const p = document.createElement('p');
             p.innerHTML = messageInput.value || '时间到！';
