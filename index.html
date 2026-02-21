@@ -51,6 +51,16 @@
             justify-content: center;
             align-items: center;
         }
+        .thirdParty a::before{
+            position: absolute;
+            content: '第三方';
+            background-color: #4CAF50;
+            border-radius: 10px 10px 0 0;
+            font-size: 15px;
+            font-weight: 400;
+            padding: 0 5px;
+            translate: 0 -30px;
+        }
     </style>
 </head>
 <body>
@@ -59,6 +69,10 @@
         <div class="theTool">
             <a href="countdown/index.html">倒计时工具</a>
             <p>手机安装到桌面，可以离线使用</p>
+        </div>
+        <div class="theTool thirdParty">
+            <a href="https://www.ilovepdf.com/">PDF工具</a>
+            <p><em>ilovePDF </em>网站，可以PDF转word、合并分割压缩PDF、等，但有次数限制</p>
         </div>
     </div>
 </body>
