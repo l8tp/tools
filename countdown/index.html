@@ -104,8 +104,9 @@
         }
          .countdown-display {
             height: 60px;
+            width: 100%;
             background-color: #f0f0f0;
-            color: #852626;
+            color: #268537;
         }
         .input-message {
             width: 100%;
@@ -124,7 +125,10 @@
             display: none;
         }
         .stopbtn {
-            background-color: #ff8980;
+            background-color: #a9a9a9;
+            color: #ffff00;
+            width: 150px;
+            flex-shrink: 0;
         }
     </style>
 </head>
@@ -143,10 +147,13 @@
                 <input type="range" class="range" min="0" max="3600" value="0" oninput="updateRange(event)">
             </div>
             <div class="afterBegain">
+                <canvas class="timeCanvas hidden" width="40" height="40"></canvas>
                 <input type="text" placeholder="请输入事件" class="input-message">
-                <div class="countdown-display hidden"></div>
             </div>
-            <button onclick="begainCount(event)" class="btn">开始</button>
+            <div class="afterBegain">
+                <div class="countdown-display hidden"></div>
+                <button onclick="begainCount(event)" class="btn">开始</button>
+            </div>
         </div>
     </div>
 
@@ -165,6 +172,7 @@
             thisCountdown.querySelector('.timeInput').classList.toggle('hidden');
             thisCountdown.querySelector('.btn').classList.toggle('stopbtn');
             thisCountdown.querySelector('.countdown-display').classList.toggle('hidden');
+            thisCountdown.querySelector('.timeCanvas').classList.toggle('hidden');
             if (start[countid]){
                 e.target.innerHTML = '停止';
                 const inputHours = thisCountdown.querySelector('.hour').value;
@@ -179,7 +187,8 @@
                     const seconds = Math.floor(totalSeconds - diff / 1000);
                     const minutes = Math.floor(seconds / 60);
                     const hours = Math.floor(minutes / 60);
-
+                    const canvasnode = thisCountdown.querySelector('.timeCanvas');
+                    drawArc(seconds/totalSeconds, canvasnode);
                     thisCountdown.querySelector('.countdown-display').innerHTML = `${hours}h ${minutes % 60}m ${seconds % 60}s`;
                     if (seconds <= 0) {
                         clearInterval(countdown[countid]);
@@ -192,6 +201,7 @@
                         thisCountdown.querySelector('.timeInput').classList.toggle('hidden');
                         thisCountdown.querySelector('.btn').classList.toggle('stopbtn');
                         thisCountdown.querySelector('.countdown-display').classList.toggle('hidden');
+                        thisCountdown.querySelector('.timeCanvas').classList.toggle('hidden');
                     }
                 }, 1000);
             }else {
@@ -204,6 +214,17 @@
             }
         };
 
+        function drawArc(remain, canvas){
+            const ctx = canvas.getContext('2d');
+            const width = 0.6;
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            ctx.beginPath();
+            ctx.lineWidth=canvas.width/2*width;
+            ctx.strokeStyle='#3797cf';
+            ctx.arc(canvas.width/2,canvas.width/2,canvas.width/2*(1-width/2),-Math.PI/2+(Math.PI*2*(1-remain)),Math.PI*3/2);
+            ctx.stroke();
+        }
+
         const audio = new Audio('sound.mp3');
         audio.load();
         audio.loop = true;
@@ -215,7 +236,7 @@
             }
             const p = document.createElement('p');
             p.innerHTML = messageInput.value || '时间到！';
-            p.classList.add(countid);
+            p.classList.add('p_' + countid);
             remind.appendChild(p);
             p.addEventListener('click', ()=>{
                 p.remove();
@@ -252,10 +273,13 @@
                     <input type="range" class="range" min="0" max="3600" value="0" oninput="updateRange(event)">
                 </div>
                 <div class="afterBegain">
+                    <canvas class="timeCanvas hidden" width="40" height="40"></canvas>
                     <input type="text" placeholder="请输入事件" class="input-message">
-                    <div class="countdown-display hidden"></div>
                 </div>
-                <button onclick="begainCount(event)" class="btn">开始</button>
+                <div class="afterBegain">
+                    <div class="countdown-display hidden"></div>
+                    <button onclick="begainCount(event)" class="btn">开始</button>
+                </div>
             `;
             document.querySelector('#countdownarea').appendChild(newCountdown);
         }

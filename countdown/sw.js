@@ -1,4 +1,4 @@
-const CACHE_NAME = 'countdown_v1.0';
+const CACHE_NAME = 'countdown_v1.1';
 const CACHE_URLS = [
     'index.html',
     'sw.js',
