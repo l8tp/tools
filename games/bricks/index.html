@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>打砖块游戏</title>
+    <title>手机版打砖块游戏</title>
     <link rel="manifest" href="manifest.json"/>
     <style>
         * {
@@ -318,7 +318,8 @@
             dx: 3,
             dy: -3,
             color: '#4dffea',
-            speed: 3
+            speed: 3, // 基础速度
+            maxSpeed: 8 // 最大速度
         };
         
         // 砖块属性
@@ -525,42 +526,56 @@
             }
         }
         
-        // 碰撞检测 - 修复版本
+        // 碰撞检测
         function collisionDetection() {
-            // 先检测小球与墙壁的碰撞（使用更精确的检测）
+            // 先检测小球与墙壁的碰撞
             if (ball.x + ball.radius >= canvas.width) {
-                // 右墙碰撞 - 确保小球完全离开墙壁
+                // 右墙碰撞
                 ball.x = canvas.width - ball.radius - 1;
-                ball.dx = -Math.abs(ball.dx); // 确保向左反弹
+                ball.dx = -Math.abs(ball.dx);
             } else if (ball.x - ball.radius <= 0) {
-                // 左墙碰撞 - 确保小球完全离开墙壁
+                // 左墙碰撞
                 ball.x = ball.radius + 1;
-                ball.dx = Math.abs(ball.dx); // 确保向右反弹
+                ball.dx = Math.abs(ball.dx);
             }
             
             // 检查小球与天花板的碰撞
             if (ball.y - ball.radius <= 0) {
-                // 天花板碰撞 - 确保小球完全离开天花板
+                // 天花板碰撞
                 ball.y = ball.radius + 1;
-                ball.dy = Math.abs(ball.dy); // 确保向下反弹
+                ball.dy = Math.abs(ball.dy);
             }
             
-            // 检查小球与挡板的碰撞
+            // 检查小球与挡板的碰撞 - 使用恒定速度
             if (
                 ball.y + ball.radius >= paddle.y &&
                 ball.y - ball.radius <= paddle.y + paddle.height &&
                 ball.x + ball.radius >= paddle.x &&
                 ball.x - ball.radius <= paddle.x + paddle.width
             ) {
-                // 计算击中的相对位置（-0.5到0.5）
-                const hitPosition = (ball.x - paddle.x) / paddle.width - 0.5;
+                // 计算击中挡板的相对位置（-1到1）
+                const hitPosition = (ball.x - (paddle.x + paddle.width / 2)) / (paddle.width / 2);
                 
-                // 根据击中位置改变反弹角度（更平滑）
-                ball.dx = hitPosition * 8; // 最大偏转角度
-                ball.dy = -Math.abs(ball.dy); // 确保向上反弹
+                // 使用基础速度而不是当前速度
+                const baseSpeed = ball.speed;
+                
+                // 根据击中位置设置角度（中间为垂直向上，边缘为最大角度）
+                // 最大反弹角度为75度（约1.3弧度）
+                const maxAngle = 75 * (Math.PI / 180); // 转换为弧度
+                const angle = hitPosition * maxAngle;
+                
+                // 根据角度计算新的速度分量
+                ball.dx = baseSpeed * Math.sin(angle);
+                ball.dy = -baseSpeed * Math.cos(angle);
                 
                 // 确保小球不会卡在挡板上
                 ball.y = paddle.y - ball.radius - 1;
+                
+                // 确保小球有最小垂直速度
+                const minVerticalSpeed = 3;
+                if (Math.abs(ball.dy) < minVerticalSpeed) {
+                    ball.dy = ball.dy > 0 ? minVerticalSpeed : -minVerticalSpeed;
+                }
             }
             
             // 检查小球与砖块的碰撞
@@ -583,56 +598,46 @@
                             ball.y + ball.radius < brickTop ||
                             ball.y - ball.radius > brickBottom
                         ) {
-                            continue; // 不可能碰撞，跳过
+                            continue;
                         }
                         
-                        // 更精确的碰撞检测
+                        // 精确碰撞检测
                         const ballCenterX = ball.x;
                         const ballCenterY = ball.y;
                         const brickCenterX = brick.x + brickWidth / 2;
                         const brickCenterY = brick.y + brickHeight / 2;
                         
-                        // 计算从砖块中心到小球中心的向量
                         const dx = ballCenterX - brickCenterX;
                         const dy = ballCenterY - brickCenterY;
                         
-                        // 计算在砖块坐标系中的位置
                         const halfWidth = brickWidth / 2;
                         const halfHeight = brickHeight / 2;
                         
-                        // 计算重叠量
                         const overlapX = halfWidth + ball.radius - Math.abs(dx);
                         const overlapY = halfHeight + ball.radius - Math.abs(dy);
                         
-                        // 判断碰撞方向并处理
                         if (overlapX > 0 && overlapY > 0) {
                             // 检测到碰撞
                             brick.status--;
                             
-                            // 根据砖块剩余生命值改变颜色
                             if (brick.status > 0) {
                                 const currentBrickColors = brickColors[(game.level - 1) % brickColors.length];
                                 brick.color = currentBrickColors[brick.status - 1];
                             }
                             
-                            // 增加分数
                             game.score += 10;
                             updateDisplay();
                             
                             // 从最小重叠的方向反弹
                             if (overlapX < overlapY) {
-                                // 水平碰撞
                                 ball.dx = -ball.dx;
-                                // 调整位置防止卡住
                                 if (dx > 0) {
                                     ball.x += overlapX;
                                 } else {
                                     ball.x -= overlapX;
                                 }
                             } else {
-                                // 垂直碰撞
                                 ball.dy = -ball.dy;
-                                // 调整位置防止卡住
                                 if (dy > 0) {
                                     ball.y += overlapY;
                                 } else {
@@ -641,7 +646,7 @@
                             }
                             
                             collisionDetected = true;
-                            break; // 一次只处理一个碰撞
+                            break;
                         }
                     }
                 }
@@ -652,14 +657,12 @@
             
             // 检查小球是否掉落
             if (ball.y + ball.radius > canvas.height) {
-                // 减少生命值
                 game.lives--;
                 updateDisplay();
                 
                 if (game.lives <= 0) {
                     gameOver();
                 } else {
-                    // 重置小球和挡板位置
                     resetBallAndPaddle();
                 }
             }
@@ -690,7 +693,6 @@
             ball.dx = ball.speed * (Math.random() > 0.5 ? 1 : -1);
             ball.dy = -ball.speed;
             
-            // 暂停游戏一小会儿
             game.running = false;
             setTimeout(() => {
                 if (game.lives > 0) {
@@ -718,26 +720,17 @@
             ball.x += ball.dx;
             ball.y += ball.dy;
             
-            // 确保小球速度不会太小
-            const minSpeed = 2;
-            if (Math.abs(ball.dx) < minSpeed) {
-                ball.dx = ball.dx > 0 ? minSpeed : -minSpeed;
-            }
-            if (Math.abs(ball.dy) < minSpeed) {
-                ball.dy = ball.dy > 0 ? minSpeed : -minSpeed;
-            }
-            
-            // 限制最大速度
-            const maxSpeed = 10;
-            if (Math.abs(ball.dx) > maxSpeed) {
-                ball.dx = ball.dx > 0 ? maxSpeed : -maxSpeed;
-            }
-            if (Math.abs(ball.dy) > maxSpeed) {
-                ball.dy = ball.dy > 0 ? maxSpeed : -maxSpeed;
-            }
-            
             // 碰撞检测
             collisionDetection();
+            
+            // 限制小球最大速度
+            const currentSpeed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
+            if (currentSpeed > ball.maxSpeed) {
+                // 归一化并重新设置速度
+                const ratio = ball.maxSpeed / currentSpeed;
+                ball.dx *= ratio;
+                ball.dy *= ratio;
+            }
         }
         
         // 游戏循环
@@ -792,7 +785,6 @@
         function levelComplete() {
             game.running = false;
             
-            // 计算关卡奖励分数
             const levelBonus = game.level * 100;
             game.score += levelBonus;
             
@@ -806,26 +798,24 @@
             game.level++;
             levelValue.textContent = game.level;
             
-            // 增加一点难度
-            ball.speed += 0.5;
+            // 每关增加一点难度（稍微增加小球速度）
+            if (game.level <= 3) {
+                ball.speed = 3 + (game.level - 1) * 0.5; // 第1关: 3, 第2关: 3.5, 第3关: 4
+                ball.maxSpeed = 8 + (game.level - 1) * 1; // 第1关: 8, 第2关: 9, 第3关: 10
+            }
+            
+            // 重置小球方向
             ball.dx = ball.speed * (Math.random() > 0.5 ? 1 : -1);
             ball.dy = -ball.speed;
             
-            // 恢复生命值（最多5个）
             if (game.lives < 5) {
                 game.lives++;
             }
             
-            // 创建新砖块
             createBricks();
-            
-            // 重置球和挡板
             resetBallAndPaddle();
-            
-            // 隐藏关卡完成屏幕
             levelCompleteScreen.classList.add('hidden');
             
-            // 开始游戏
             setTimeout(() => {
                 game.running = true;
             }, 500);
@@ -842,15 +832,17 @@
             game.paused = false;
             
             levelValue.textContent = game.level;
+            
+            // 重置小球速度
             ball.speed = 3;
+            ball.maxSpeed = 8;
+            ball.dx = ball.speed * (Math.random() > 0.5 ? 1 : -1);
+            ball.dy = -ball.speed;
             
             gameOverScreen.classList.add('hidden');
             levelCompleteScreen.classList.add('hidden');
             
-            // 初始化游戏
             init();
-            
-            // 显示开始屏幕
             startScreen.classList.remove('hidden');
             startBtn.textContent = '开始';
             startBtn.classList.remove('btn-pause');
@@ -865,7 +857,6 @@
         
         // 设置事件监听器
         function setupEventListeners() {
-            // 按钮控制
             startBtn.addEventListener('click', () => {
                 if (!game.running) {
                     startGame();
@@ -874,7 +865,6 @@
                 }
             });
             
-            // 开始屏幕触摸开始
             startScreen.addEventListener('touchstart', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -883,7 +873,6 @@
                 }
             });
             
-            // 开始屏幕点击开始（桌面端）
             startScreen.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -892,35 +881,30 @@
                 }
             });
             
-            // 游戏结束屏幕触摸重新开始
             gameOverScreen.addEventListener('touchstart', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 restartGame();
             });
             
-            // 游戏结束屏幕点击重新开始
             gameOverScreen.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 restartGame();
             });
             
-            // 关卡完成屏幕触摸进入下一关
             levelCompleteScreen.addEventListener('touchstart', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 nextLevel();
             });
             
-            // 关卡完成屏幕点击进入下一关
             levelCompleteScreen.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 nextLevel();
             });
             
-            // 左移按钮
             leftBtn.addEventListener('touchstart', (e) => {
                 e.preventDefault();
                 movePaddle('left');
@@ -931,7 +915,6 @@
                 movePaddle('left');
             });
             
-            // 右移按钮
             rightBtn.addEventListener('touchstart', (e) => {
                 e.preventDefault();
                 movePaddle('right');
@@ -942,7 +925,6 @@
                 movePaddle('right');
             });
             
-            // 触摸控制区域
             touchLeft.addEventListener('touchstart', (e) => {
                 e.preventDefault();
                 touchLeftActive = true;
@@ -958,7 +940,6 @@
                 touchLeftActive = false;
             });
             
-            // 鼠标事件支持
             touchLeft.addEventListener('mousedown', (e) => {
                 e.preventDefault();
                 touchLeftActive = true;
@@ -989,7 +970,6 @@
                 touchRightActive = false;
             });
             
-            // 鼠标事件支持
             touchRight.addEventListener('mousedown', (e) => {
                 e.preventDefault();
                 touchRightActive = true;
@@ -1005,7 +985,6 @@
                 touchRightActive = false;
             });
             
-            // 键盘控制（桌面端备用）
             document.addEventListener('keydown', (e) => {
                 if (!game.running || game.paused) return;
                 
@@ -1018,7 +997,6 @@
                 }
             });
             
-            // 鼠标控制（桌面端备用）
             canvas.addEventListener('mousemove', (e) => {
                 if (!game.running || game.paused) return;
                 
@@ -1027,7 +1005,6 @@
                 
                 paddle.x = mouseX - paddle.width / 2;
                 
-                // 确保挡板不超出边界
                 if (paddle.x < 0) {
                     paddle.x = 0;
                 } else if (paddle.x + paddle.width > canvas.width) {
@@ -1035,7 +1012,6 @@
                 }
             });
             
-            // 触摸控制
             canvas.addEventListener('touchmove', (e) => {
                 if (!game.running || game.paused) return;
                 
@@ -1044,10 +1020,8 @@
                 const rect = canvas.getBoundingClientRect();
                 const touchX = touch.clientX - rect.left;
                 
-                // 根据触摸位置移动挡板
                 paddle.x = touchX - paddle.width / 2;
                 
-                // 确保挡板不超出边界
                 if (paddle.x < 0) {
                     paddle.x = 0;
                 } else if (paddle.x + paddle.width > canvas.width) {
@@ -1055,7 +1029,6 @@
                 }
             });
             
-            // 防止页面滚动
             document.body.addEventListener('touchmove', (e) => {
                 if (e.target === canvas || e.target === touchLeft || e.target === touchRight) {
                     e.preventDefault();
@@ -1080,7 +1053,7 @@
             if (touchRightActive) {
                 movePaddle('right');
             }
-        }, 16); // 约60fps
+        }, 16);
         
         // 添加重新开始按钮
         const restartBtn = document.createElement('button');
