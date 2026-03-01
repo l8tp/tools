@@ -1,5 +1,5 @@
 // 缓存名称
-const CACHE_NAME = 'minesweeper-cache-v1';
+const CACHE_NAME = 'minesweeper-cache-v1.1';
 
 // 需要缓存的资源列表
 const STATIC_ASSETS = [
@@ -7,6 +7,8 @@ const STATIC_ASSETS = [
   '/index.html',
   '/style.css',
   '/script.js',
+  '/manifest.json',
+  '/service-worker.js',
   '/icons/icon.png'
 ];
 
