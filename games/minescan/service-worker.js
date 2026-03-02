@@ -1,74 +1,55 @@
 // 缓存名称
-const CACHE_NAME = 'minesweeper-cache-v1.1';
+const CACHE_NAME = 'minesweeper-cache-v1.2';
 
 // 需要缓存的资源列表
-const STATIC_ASSETS = [
-  '/',
+const CACHE_URLS = [
   '/index.html',
   '/style.css',
   '/script.js',
   '/manifest.json',
   '/service-worker.js',
-  '/icons/icon.png'
+  '/icons/icon.png',
+  '/icons/icon-512.png'
 ];
 
 // 安装事件 - 缓存静态资源
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('缓存已打开');
-        return cache.addAll(STATIC_ASSETS);
-      })
-      .then(() => self.skipWaiting())
-  );
+self.addEventListener('install', async (event) => {
+    console.log('install中', event);
+    const cache = await caches.open(CACHE_NAME);
+    await cache.addAll(CACHE_URLS);
+    await self.skipWaiting();
 });
 
 // 激活事件 - 清理旧缓存
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('删除旧缓存:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    }).then(() => self.clients.claim())
-  );
+self.addEventListener('activate', async (event) => {
+    console.log('activate中', event);
+    const keys = await caches.keys();
+    for(let key of keys){
+        if (key !== CACHE_NAME){
+            console.log('🗑️ 删除旧缓存:', key)
+            caches.delete(key);
+        }
+    }
+    //sw激活后，立即控制 
+    await self.clients.claim();
 });
 
 //  fetch 事件 - 从缓存中获取资源
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // 如果缓存中有资源，直接返回
-        if (response) {
-          return response;
-        }
-        
-        // 否则从网络获取
-        return fetch(event.request)
-          .then((networkResponse) => {
-            // 如果响应有效，将其添加到缓存中
-            if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
-              const responseToCache = networkResponse.clone();
-              caches.open(CACHE_NAME)
-                .then((cache) => {
-                  cache.put(event.request, responseToCache);
-                });
-            }
-            return networkResponse;
-          })
-          .catch(() => {
-            // 如果网络请求失败，返回一个离线页面或其他默认资源
-            if (event.request.mode === 'navigate') {
-              return caches.match('/index.html');
-            }
-          });
-      })
-  );
+self.addEventListener('fetch', async (event) => {
+    console.log('fetch中', event);
+    const req = event.request.url;
+    event.respondWith(networkFirst(req));
 });
+
+async function networkFirst(req) {
+    try{
+        console.log('从网络读取' + req)
+        const fresh = await fetch(req);
+        return fresh;
+    }catch(e){
+        console.log('断网，从缓存读取' + req)
+        const cache = await caches.open(CACHE_NAME);
+        const cached = await cache.match(req);
+        return cached;
+    }
+}
