@@ -11,6 +11,7 @@ class Minesweeper {
         this.gameStarted = false;
         this.timer = 0;
         this.timerInterval = null;
+        this.flagMode = false;
         
         this.initElements();
         this.initEventListeners();
@@ -27,6 +28,7 @@ class Minesweeper {
         this.winModal = document.getElementById('win-modal');
         this.winMessage = document.getElementById('win-message');
         this.closeModalBtn = document.getElementById('close-modal');
+        this.toggleModeBtn = document.getElementById('toggle-mode-btn');
     }
     
     initEventListeners() {
@@ -36,6 +38,7 @@ class Minesweeper {
             this.resetGame();
         });
         this.closeModalBtn.addEventListener('click', () => this.hideWinModal());
+        this.toggleModeBtn.addEventListener('click', () => this.toggleFlagMode());
     }
     
     initGame() {
@@ -178,18 +181,37 @@ class Minesweeper {
     }
     
     handleCellClick(row, col) {
-        if (this.gameOver || this.board[row][col].revealed || this.board[row][col].flagged) {
+        if (this.gameOver || this.board[row][col].revealed) {
             return;
         }
         
-        if (!this.gameStarted) {
-            this.gameStarted = true;
-            this.placeMines(row, col);
-            this.startTimer();
+        if (this.flagMode) {
+            // 标记模式：标记或取消标记地雷
+            if (!this.gameStarted) {
+                this.gameStarted = true;
+                this.placeMines(row, col);
+                this.startTimer();
+            }
+            
+            this.board[row][col].flagged = !this.board[row][col].flagged;
+            this.flags += this.board[row][col].flagged ? 1 : -1;
+            this.updateMineCount();
+            this.updateCellDisplay(row, col);
+        } else {
+            // 普通模式：揭开单元格
+            if (this.board[row][col].flagged) {
+                return;
+            }
+            
+            if (!this.gameStarted) {
+                this.gameStarted = true;
+                this.placeMines(row, col);
+                this.startTimer();
+            }
+            
+            this.revealCell(row, col);
+            this.checkWin();
         }
-        
-        this.revealCell(row, col);
-        this.checkWin();
     }
     
     handleCellRightClick(row, col) {
@@ -251,14 +273,30 @@ class Minesweeper {
         const cell = this.grid.querySelector(`[data-row="${row}"][data-col="${col}"]`);
         if (!cell) return;
         
-        cell.classList.remove('revealed', 'mine', 'flagged', '1', '2', '3', '4', '5', '6', '7', '8');
+        // 数字到英文单词的映射
+        const numberToWord = {
+            1: 'one',
+            2: 'two',
+            3: 'three',
+            4: 'four',
+            5: 'five',
+            6: 'six',
+            7: 'seven',
+            8: 'eight'
+        };
+        
+        // 移除所有可能的类名
+        cell.classList.remove('revealed', 'mine', 'flagged', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight');
         
         if (this.board[row][col].revealed) {
             cell.classList.add('revealed');
             if (this.board[row][col].mine) {
                 cell.classList.add('mine');
             } else if (this.board[row][col].neighborMines > 0) {
-                cell.classList.add(this.board[row][col].neighborMines.toString());
+                const wordClass = numberToWord[this.board[row][col].neighborMines];
+                if (wordClass) {
+                    cell.classList.add(wordClass);
+                }
                 cell.textContent = this.board[row][col].neighborMines;
             } else {
                 cell.textContent = '';
@@ -307,8 +345,26 @@ class Minesweeper {
         this.winModal.classList.remove('show');
     }
     
+    toggleFlagMode() {
+        this.flagMode = !this.flagMode;
+        // this.toggleModeBtn.querySelector('p').textContent = `${this.flagMode ? '开启' : '关闭'}`;
+        if(this.flagMode){
+            document.querySelector('.toggle-btn-after').style.display = 'none';
+            document.querySelector('.toggle-btn-before').style.display = 'flex';
+        }else{
+            document.querySelector('.toggle-btn-after').style.display = 'flex';
+            document.querySelector('.toggle-btn-before').style.display = 'none';
+        }
+    }
+    
     resetGame() {
         this.hideWinModal();
+        this.flagMode = false;
+        if (this.toggleModeBtn) {
+            // this.toggleModeBtn.querySelector('p').textContent = '关闭';
+            document.querySelector('.toggle-btn-after').style.display = 'flex';
+            document.querySelector('.toggle-btn-before').style.display = 'none';
+        }
         this.initGame();
     }
 }
