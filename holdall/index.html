@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>移动工具箱</title>
+    <style>
+        *{
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body{
+            padding: 10px;
+        }
+        main, .theTool{
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 30px;
+        }
+        section{
+            max-width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            font-size: 20px;
+        }
+        .theTool{
+            gap: 3px;
+            margin: 0 30px;
+            background-color: #ebebeb;
+            border-radius: 10px;
+            padding: 5px;
+        }
+        .theTool>h2{
+            width: 100%;
+            position: relative;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+        }
+        .tool-icon{
+            position: absolute;
+            top: 0;
+            left: 0;
+            font-size: 25px;
+        }
+
+    </style>
+</head>
+<body>
+    <main>
+        <h1>欢迎来到我的工具箱</h1>
+        <section>
+            <div class="theTool">
+                
+                <h2><a class="tool-icon">📦</a><a class="tool-link" href="files\WinRAR免安装-self-extracting.exe">winrar解压工具</a></h2> 
+                <p>自解压文件，免安装的winrar解压工具</p>
+            </div>
+            <div class="theTool">
+                <h2><a class="tool-icon">💻</a><a class="tool-link" href="files\Notepad++ v7.7_win64(解压密码：rjzkgzh).7z">Notepad++</a></h2> 
+                <p>简单的编程工具</p>
+            </div>
+            <div class="theTool">
+                <h2><a class="tool-icon">🏷️</a><a class="tool-link" href="files\renamerpro1.rar">renamerpro</a></h2> 
+                <p>重命名工具</p>
+            </div>
+            <div class="theTool">
+                <h2><a class="tool-icon">🧩</a><a class="tool-link" href="files\谷歌浏览器搜索插件（解压密码：s8v7）.rar">谷歌浏览kkkk器搜索插件</a></h2> 
+                <p>让谷歌浏览器可以在国内使用谷歌搜索，2018年之前的版本</p>
+            </div>
+            <div class="theTool">
+                <h2><a class="tool-icon">📦</a><a class="tool-link" href="files\WinRAR 5.70.x64 免安装.rar">winrar压缩包</a></h2> 
+                <p>winrar解压工具的压缩包，必须先解压才能使用</p>
+            </div>
+        </section>
+    </main>
+    <script>
+        const h2s = document.querySelectorAll('.theTool>h2');
+        for(let h2 of h2s){
+            const toolink = h2.querySelector('.tool-link');
+            if(h2.offsetWidth - toolink.offsetWidth < 60 ){
+                toolink.style.textIndent = '30px';
+            }
+        }
+    </script>
+</body>
+</html>
