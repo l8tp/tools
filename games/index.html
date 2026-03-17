@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的小工具</title>
+    <title>我的小游戏</title>
     <style>
         *{
             padding: 0;
@@ -21,7 +21,7 @@
             padding: 20px;
             gap: 80px;
         }
-        #toolContainer, .theTool{
+        #gameContainer, .theGame{
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -29,16 +29,16 @@
             gap: 20px;
         }
         @media screen and (min-width: 480px) {
-            #toolContainer{
+            #gameContainer{
                 flex-direction: row;
                 flex-wrap: wrap;
                 gap: 30px;
             }
         }
-        .theTool{
+        .theGame{
             gap: 2px;
         }
-        .theTool a{
+        .theGame a{
             font-size: 24px;
             font-weight: 800;
             text-decoration: none;
@@ -64,23 +64,19 @@
     </style>
 </head>
 <body>
-    <h1>欢迎来到我的小工具</h1>
-    <div id="toolContainer">
-        <div class="theTool">
-            <a href="countdown/index.html">倒计时工具</a>
+    <h1>欢迎来到我的小游戏</h1>
+    <div id="gameContainer">
+        <div class="theGame">
+            <a href="bricks/index.html">打砖块小游戏</a>
             <p>手机安装到桌面，可以离线使用</p>
         </div>
-        <div class="theTool thirdParty">
-            <a href="https://www.ilovepdf.com/zh-cn">PDF工具</a>
-            <p><em>ilovePDF </em>网站，可以PDF转word、合并分割压缩PDF、等，但有次数限制</p>
-        </div>
-        <div class="theTool">
-            <a href="games/index.html">我的小游戏</a>
+        <div class="theGame">
+            <a href="minescan/index.html">扫雷小游戏</a>
             <p>手机安装到桌面，可以离线使用</p>
         </div>
-        <div class="theTool">
-            <a href="holdall\index.html">电脑小工具箱</a>
-            <p>各种电脑小软件</p>
+        <div class="theGame">
+            <a href="monopoly/index.html">大富翁小游戏</a>
+            <p>手机安装到桌面，可以离线使用</p>
         </div>
     </div>
 </body>
