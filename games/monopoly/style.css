@@ -121,6 +121,11 @@ h1 {
     background-color: #45b7aa;
 }
 
+#rollBtn:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
 #diceResult {
     font-size: 1.5rem;
     font-weight: bold;
@@ -396,12 +401,12 @@ h1 {
 }
 
 .player-marker.player1 {
-    top: 5px;
+    top: 25px;
     left: 5px;
 }
 
 .player-marker.player2 {
-    top: 5px;
+    top: 25px;
     right: 5px;
 }
 

@@ -63,6 +63,27 @@ const chanceCards = [
     '前进到最近的物业'
 ];
 
+// 检查玩家是否破产
+function checkBankruptcy() {
+    const currentPlayer = gameState.players[gameState.currentPlayer];
+    if (currentPlayer.money <= 0) {
+        updateGameMessage(`${currentPlayer.emoji} ${currentPlayer.name} 资金不足，宣布破产！游戏结束！`);
+        addMoneyLog(`${currentPlayer.emoji} 破产，游戏结束！`);
+        // 禁用掷骰子按钮
+        document.getElementById('rollBtn').disabled = true;
+        
+        // 确定获胜的玩家
+        const winner = gameState.players.find(player => player.id !== currentPlayer.id);
+        if (winner) {
+            // 显示恭喜弹窗
+            showWinnerModal(winner);
+        }
+        
+        return true;
+    }
+    return false;
+}
+
 // 初始化游戏
 function initGame() {
     // 生成地块
@@ -75,7 +96,10 @@ function initGame() {
     updatePlayerMoney();
     
     // 更新游戏信息
-    updateGameMessage(`游戏开始！${gameState.players[gameState.currentPlayer].emoji} ${gameState.players[gameState.currentPlayer].name} 请掷骰子`);
+    updateGameMessage(`游戏开始！${gameState.players[gameState.currentPlayer].emoji} 请掷骰子`);
+    
+    // 启用掷骰子按钮
+    document.getElementById('rollBtn').disabled = false;
 }
 
 // 更新地块所有者显示
@@ -87,7 +111,7 @@ function updateTileOwners() {
             if (ownerElement) {
                 const owner = gameState.players.find(player => tile.owner === player.id);
                 if (owner) {
-                    ownerElement.textContent = `${owner.emoji} ${owner.name}`;
+                    ownerElement.textContent = `${owner.emoji}`;
                     ownerElement.style.display = 'block';
                 } else {
                     ownerElement.style.display = 'none';
@@ -116,11 +140,14 @@ function renderPlayerMarkers() {
 
 // 掷骰子
 function rollDice() {
+    // 禁用掷骰子按钮
+    document.getElementById('rollBtn').disabled = true;
+    
     const dice = Math.floor(Math.random() * 6) + 1;
     document.getElementById('diceResult').textContent = dice;
     
     const currentPlayer = gameState.players[gameState.currentPlayer];
-    updateGameMessage(`${currentPlayer.emoji} ${currentPlayer.name} 掷出了 ${dice} 点`);
+    updateGameMessage(`${currentPlayer.emoji} 掷出了 ${dice} 点`);
     
     // 移动玩家
     setTimeout(() => {
@@ -156,7 +183,7 @@ function handleTileEffect(player, position) {
     switch (tile.type) {
         case TILE_TYPES.START:
             player.money += 200;
-            updateGameMessage(`${player.emoji} ${player.name} 经过起点，获得 200 元`);
+            updateGameMessage(`${player.emoji} 经过起点，获得 200 元`);
             addMoneyLog(`${player.emoji} 获得 200 元（起点）`);
             
             // 更新玩家资金显示
@@ -165,7 +192,9 @@ function handleTileEffect(player, position) {
             // 切换玩家
             setTimeout(() => {
                 gameState.currentPlayer = (gameState.currentPlayer + 1) % gameState.players.length;
-                updateGameMessage(`轮到 ${gameState.players[gameState.currentPlayer].emoji} ${gameState.players[gameState.currentPlayer].name} 掷骰子`);
+                updateGameMessage(`轮到 ${gameState.players[gameState.currentPlayer].emoji} 掷骰子`);
+                // 启用掷骰子按钮
+                document.getElementById('rollBtn').disabled = false;
             }, 1500);
             break;
         
@@ -176,11 +205,13 @@ function handleTileEffect(player, position) {
                     // 显示购买弹窗
                     showBuyModal(player, tile);
                 } else {
-                    updateGameMessage(`${player.name} 资金不足，无法购买 ${tile.name}`);
+                    updateGameMessage(`${player.emoji} 资金不足，无法购买 ${tile.name}`);
                     // 继续游戏流程
                     setTimeout(() => {
                         gameState.currentPlayer = (gameState.currentPlayer + 1) % gameState.players.length;
-                        updateGameMessage(`轮到 ${gameState.players[gameState.currentPlayer].name} 掷骰子`);
+                        updateGameMessage(`轮到 ${gameState.players[gameState.currentPlayer].emoji} 掷骰子`);
+                        // 启用掷骰子按钮
+                        document.getElementById('rollBtn').disabled = false;
                     }, 1500);
                 }
             } else if (tile.owner !== player.id) {
@@ -189,75 +220,97 @@ function handleTileEffect(player, position) {
                 if (owner) {
                     player.money -= tile.rent;
                     owner.money += tile.rent;
-                    updateGameMessage(`${player.emoji} ${player.name} 支付 ${owner.emoji} ${owner.name} ${tile.rent} 元租金`);
+                    updateGameMessage(`${player.emoji} 支付 ${owner.emoji} ${tile.rent} 元租金`);
                     addMoneyLog(`${player.emoji} 支付 ${tile.rent} 元租金给 ${owner.emoji}`);
                     addMoneyLog(`${owner.emoji} 获得 ${tile.rent} 元租金`);
                     
                     // 更新玩家资金显示
                     updatePlayerMoney();
                     
+                    // 检查是否破产
+                    if (checkBankruptcy()) {
+                        return;
+                    }
+                    
                     // 切换玩家
                     setTimeout(() => {
                         gameState.currentPlayer = (gameState.currentPlayer + 1) % gameState.players.length;
-                        updateGameMessage(`轮到 ${gameState.players[gameState.currentPlayer].emoji} ${gameState.players[gameState.currentPlayer].name} 掷骰子`);
+                        updateGameMessage(`轮到 ${gameState.players[gameState.currentPlayer].emoji} 掷骰子`);
+                        // 启用掷骰子按钮
+                        document.getElementById('rollBtn').disabled = false;
                     }, 1500);
                 }
             } else {
                 // 地块属于自己
-                updateGameMessage(`${player.emoji} ${player.name} 到达自己的 ${tile.name}`);
+                updateGameMessage(`${player.emoji} 到达自己的 ${tile.name}`);
                 
                 // 切换玩家
                 setTimeout(() => {
                     gameState.currentPlayer = (gameState.currentPlayer + 1) % gameState.players.length;
-                    updateGameMessage(`轮到 ${gameState.players[gameState.currentPlayer].emoji} ${gameState.players[gameState.currentPlayer].name} 掷骰子`);
+                    updateGameMessage(`轮到 ${gameState.players[gameState.currentPlayer].emoji} 掷骰子`);
+                    // 启用掷骰子按钮
+                    document.getElementById('rollBtn').disabled = false;
                 }, 1500);
             }
             break;
         
         case TILE_TYPES.CHANCE:
             const chanceCard = chanceCards[Math.floor(Math.random() * chanceCards.length)];
-            updateGameMessage(`${player.emoji} ${player.name} 抽到机会卡：${chanceCard}`);
+            updateGameMessage(`${player.emoji} 抽到机会卡：${chanceCard}`);
             handleChanceCard(player, chanceCard);
             
             // 切换玩家
             setTimeout(() => {
                 gameState.currentPlayer = (gameState.currentPlayer + 1) % gameState.players.length;
-                updateGameMessage(`轮到 ${gameState.players[gameState.currentPlayer].emoji} ${gameState.players[gameState.currentPlayer].name} 掷骰子`);
+                updateGameMessage(`轮到 ${gameState.players[gameState.currentPlayer].emoji} 掷骰子`);
+                // 启用掷骰子按钮
+                document.getElementById('rollBtn').disabled = false;
             }, 1500);
             break;
         
         case TILE_TYPES.TAX:
             player.money -= tile.price;
-            updateGameMessage(`${player.emoji} ${player.name} 支付税务：¥${tile.price}`);
+            updateGameMessage(`${player.emoji} 支付税务：¥${tile.price}`);
             addMoneyLog(`${player.emoji} 支付 ${tile.price} 元税务`);
             
             // 更新玩家资金显示
             updatePlayerMoney();
             
+            // 检查是否破产
+            if (checkBankruptcy()) {
+                return;
+            }
+            
             // 切换玩家
             setTimeout(() => {
                 gameState.currentPlayer = (gameState.currentPlayer + 1) % gameState.players.length;
-                updateGameMessage(`轮到 ${gameState.players[gameState.currentPlayer].emoji} ${gameState.players[gameState.currentPlayer].name} 掷骰子`);
+                updateGameMessage(`轮到 ${gameState.players[gameState.currentPlayer].emoji} 掷骰子`);
+                // 启用掷骰子按钮
+                document.getElementById('rollBtn').disabled = false;
             }, 1500);
             break;
         
         case TILE_TYPES.JAIL:
-            updateGameMessage(`${player.emoji} ${player.name} 进入监狱`);
+            updateGameMessage(`${player.emoji} 进入监狱`);
             
             // 切换玩家
             setTimeout(() => {
                 gameState.currentPlayer = (gameState.currentPlayer + 1) % gameState.players.length;
-                updateGameMessage(`轮到 ${gameState.players[gameState.currentPlayer].emoji} ${gameState.players[gameState.currentPlayer].name} 掷骰子`);
+                updateGameMessage(`轮到 ${gameState.players[gameState.currentPlayer].emoji} 掷骰子`);
+                // 启用掷骰子按钮
+                document.getElementById('rollBtn').disabled = false;
             }, 1500);
             break;
         
         case TILE_TYPES.FREE_PARKING:
-            updateGameMessage(`${player.emoji} ${player.name} 停在免费停车区`);
+            updateGameMessage(`${player.emoji} 停在免费停车区`);
             
             // 切换玩家
             setTimeout(() => {
                 gameState.currentPlayer = (gameState.currentPlayer + 1) % gameState.players.length;
-                updateGameMessage(`轮到 ${gameState.players[gameState.currentPlayer].emoji} ${gameState.players[gameState.currentPlayer].name} 掷骰子`);
+                updateGameMessage(`轮到 ${gameState.players[gameState.currentPlayer].emoji} 掷骰子`);
+                // 启用掷骰子按钮
+                document.getElementById('rollBtn').disabled = false;
             }, 1500);
             break;
     }
@@ -305,7 +358,7 @@ function showBuyModal(player, tile) {
     const modal = document.getElementById('buyModal');
     const modalMessage = document.getElementById('modalMessage');
     
-    modalMessage.innerHTML = `${player.emoji} ${player.name}，是否购买 ${tile.emoji} ${tile.name}？<br>价格：¥${tile.price}<br>租金：¥${tile.rent}`;
+    modalMessage.innerHTML = `${player.emoji}，是否购买 ${tile.emoji} ${tile.name}？<br>价格：¥${tile.price}<br>租金：¥${tile.rent}`;
     modal.style.display = 'block';
 }
 
@@ -322,11 +375,17 @@ function handleBuy() {
     if (currentBuyingPlayer && currentBuyingTile) {
         currentBuyingPlayer.money -= currentBuyingTile.price;
         currentBuyingTile.owner = currentBuyingPlayer.id;
-        updateGameMessage(`${currentBuyingPlayer.emoji} ${currentBuyingPlayer.name} 购买了 ${currentBuyingTile.name}，花费 ¥${currentBuyingTile.price}`);
+        updateGameMessage(`${currentBuyingPlayer.emoji} 购买了 ${currentBuyingTile.name}，花费 ¥${currentBuyingTile.price}`);
         addMoneyLog(`${currentBuyingPlayer.emoji} 花费 ${currentBuyingTile.price} 元购买 ${currentBuyingTile.name}`);
         
         // 更新玩家资金显示
         updatePlayerMoney();
+        
+        // 检查是否破产
+        if (checkBankruptcy()) {
+            hideBuyModal();
+            return;
+        }
         
         // 更新地块所有者显示
         updateTileOwners();
@@ -340,21 +399,71 @@ function handleBuy() {
         // 切换玩家
         setTimeout(() => {
             gameState.currentPlayer = (gameState.currentPlayer + 1) % gameState.players.length;
-            updateGameMessage(`轮到 ${gameState.players[gameState.currentPlayer].emoji} ${gameState.players[gameState.currentPlayer].name} 掷骰子`);
+            updateGameMessage(`轮到 ${gameState.players[gameState.currentPlayer].emoji} 掷骰子`);
+            // 启用掷骰子按钮
+            document.getElementById('rollBtn').disabled = false;
         }, 1500);
     }
 }
 
 // 处理取消
 function handleCancel() {
-    updateGameMessage(`${currentBuyingPlayer.emoji} ${currentBuyingPlayer.name} 取消购买 ${currentBuyingTile.name}`);
+    updateGameMessage(`${currentBuyingPlayer.emoji} 取消购买 ${currentBuyingTile.name}`);
     hideBuyModal();
     
     // 切换玩家
     setTimeout(() => {
         gameState.currentPlayer = (gameState.currentPlayer + 1) % gameState.players.length;
-        updateGameMessage(`轮到 ${gameState.players[gameState.currentPlayer].emoji} ${gameState.players[gameState.currentPlayer].name} 掷骰子`);
+        updateGameMessage(`轮到 ${gameState.players[gameState.currentPlayer].emoji} 掷骰子`);
+        // 启用掷骰子按钮
+        document.getElementById('rollBtn').disabled = false;
     }, 1500);
+}
+
+// 显示获胜者弹窗
+function showWinnerModal(winner) {
+    const modal = document.createElement('div');
+    modal.id = 'winnerModal';
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <h3>🎉 游戏结束 🎉</h3>
+            <p>${winner.emoji} 获胜！</p>
+            <p>恭喜你赢得了这场游戏！</p>
+            <div class="modal-buttons">
+                <button id="restartBtn">重新开始</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    modal.style.display = 'block';
+    
+    // 添加重新开始按钮事件
+    document.getElementById('restartBtn').addEventListener('click', restartGame);
+}
+
+// 重新开始游戏
+function restartGame() {
+    // 隐藏获胜者弹窗
+    const winnerModal = document.getElementById('winnerModal');
+    if (winnerModal) {
+        winnerModal.remove();
+    }
+    
+    // 重置游戏状态
+    gameState = {
+        players: [
+            { id: 1, position: 0, money: 1500, name: '玩家1', emoji: '🐱' },
+            { id: 2, position: 0, money: 1500, name: '玩家2', emoji: '🐶' }
+        ],
+        currentPlayer: 0,
+        tiles: [],
+        gameMessage: '',
+        moneyLog: []
+    };
+    
+    // 重新初始化游戏
+    initGame();
 }
 
 // 处理机会卡
@@ -369,6 +478,8 @@ function handleChanceCard(player, card) {
             player.money -= 50;
             addMoneyLog(`${player.emoji} 失去 50 元（机会卡）`);
             updatePlayerMoney();
+            // 检查是否破产
+            checkBankruptcy();
             break;
         case '前进3格':
             player.position = (player.position + 3) % TILE_COUNT;
@@ -394,6 +505,8 @@ function handleChanceCard(player, card) {
             player.money -= 100;
             addMoneyLog(`${player.emoji} 失去 100 元（机会卡）`);
             updatePlayerMoney();
+            // 检查是否破产
+            checkBankruptcy();
             break;
         case '前进到最近的物业':
             // 找到最近的物业
