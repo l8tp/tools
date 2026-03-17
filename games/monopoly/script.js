@@ -4,8 +4,8 @@ const TILE_COUNT = 20; // 地块数量
 // 游戏状态
 let gameState = {
     players: [
-        { id: 1, position: 0, money: 1500, name: '玩家1', emoji: '🐱' },
-        { id: 2, position: 0, money: 1500, name: '玩家2', emoji: '🐶' }
+        { id: 1, position: 0, money: 1500, name: '玩家1', emoji: '🐱', inJail: false },
+        { id: 2, position: 0, money: 1500, name: '玩家2', emoji: '🐶', inJail: false }
     ],
     currentPlayer: 0,
     tiles: [],
@@ -140,19 +140,36 @@ function renderPlayerMarkers() {
 
 // 掷骰子
 function rollDice() {
+    const currentPlayer = gameState.players[gameState.currentPlayer];
+    
+    // 检查玩家是否在监狱中
+    if (currentPlayer.inJail) {
+        updateGameMessage(`${currentPlayer.emoji} 在监狱中，跳过本轮`);
+        addMoneyLog(`${currentPlayer.emoji} 在监狱中，跳过本轮`);
+        currentPlayer.inJail = false; // 出狱
+        
+        // 切换玩家
+        setTimeout(() => {
+            gameState.currentPlayer = (gameState.currentPlayer + 1) % gameState.players.length;
+            updateGameMessage(`轮到 ${gameState.players[gameState.currentPlayer].emoji} 掷骰子`);
+            // 启用掷骰子按钮
+            document.getElementById('rollBtn').disabled = false;
+        }, 100);
+        return;
+    }
+    
     // 禁用掷骰子按钮
     document.getElementById('rollBtn').disabled = true;
     
     const dice = Math.floor(Math.random() * 6) + 1;
     document.getElementById('diceResult').textContent = dice;
     
-    const currentPlayer = gameState.players[gameState.currentPlayer];
     updateGameMessage(`${currentPlayer.emoji} 掷出了 ${dice} 点`);
     
     // 移动玩家
     setTimeout(() => {
         movePlayer(currentPlayer, dice);
-    }, 1000);
+    }, 100);
 }
 
 // 移动玩家
@@ -171,7 +188,7 @@ function movePlayer(player, steps) {
             // 处理地块效果
             setTimeout(() => {
                 handleTileEffect(player, player.position);
-            }, 500);
+            }, 100);
         }
     }, 200);
 }
@@ -195,7 +212,7 @@ function handleTileEffect(player, position) {
                 updateGameMessage(`轮到 ${gameState.players[gameState.currentPlayer].emoji} 掷骰子`);
                 // 启用掷骰子按钮
                 document.getElementById('rollBtn').disabled = false;
-            }, 1500);
+            }, 100);
             break;
         
         case TILE_TYPES.PROPERTY:
@@ -212,7 +229,7 @@ function handleTileEffect(player, position) {
                         updateGameMessage(`轮到 ${gameState.players[gameState.currentPlayer].emoji} 掷骰子`);
                         // 启用掷骰子按钮
                         document.getElementById('rollBtn').disabled = false;
-                    }, 1500);
+                    }, 100);
                 }
             } else if (tile.owner !== player.id) {
                 // 地块属于其他玩家，支付租金
@@ -238,7 +255,7 @@ function handleTileEffect(player, position) {
                         updateGameMessage(`轮到 ${gameState.players[gameState.currentPlayer].emoji} 掷骰子`);
                         // 启用掷骰子按钮
                         document.getElementById('rollBtn').disabled = false;
-                    }, 1500);
+                    }, 100);
                 }
             } else {
                 // 地块属于自己
@@ -250,7 +267,7 @@ function handleTileEffect(player, position) {
                     updateGameMessage(`轮到 ${gameState.players[gameState.currentPlayer].emoji} 掷骰子`);
                     // 启用掷骰子按钮
                     document.getElementById('rollBtn').disabled = false;
-                }, 1500);
+                }, 100);
             }
             break;
         
@@ -265,7 +282,7 @@ function handleTileEffect(player, position) {
                 updateGameMessage(`轮到 ${gameState.players[gameState.currentPlayer].emoji} 掷骰子`);
                 // 启用掷骰子按钮
                 document.getElementById('rollBtn').disabled = false;
-            }, 1500);
+            }, 100);
             break;
         
         case TILE_TYPES.TAX:
@@ -287,11 +304,13 @@ function handleTileEffect(player, position) {
                 updateGameMessage(`轮到 ${gameState.players[gameState.currentPlayer].emoji} 掷骰子`);
                 // 启用掷骰子按钮
                 document.getElementById('rollBtn').disabled = false;
-            }, 1500);
+            }, 100);
             break;
         
         case TILE_TYPES.JAIL:
-            updateGameMessage(`${player.emoji} 进入监狱`);
+            player.inJail = true;
+            updateGameMessage(`${player.emoji} 进入监狱，将跳过下一轮`);
+            addMoneyLog(`${player.emoji} 进入监狱，将跳过下一轮`);
             
             // 切换玩家
             setTimeout(() => {
@@ -299,7 +318,7 @@ function handleTileEffect(player, position) {
                 updateGameMessage(`轮到 ${gameState.players[gameState.currentPlayer].emoji} 掷骰子`);
                 // 启用掷骰子按钮
                 document.getElementById('rollBtn').disabled = false;
-            }, 1500);
+            }, 100);
             break;
         
         case TILE_TYPES.FREE_PARKING:
@@ -311,7 +330,7 @@ function handleTileEffect(player, position) {
                 updateGameMessage(`轮到 ${gameState.players[gameState.currentPlayer].emoji} 掷骰子`);
                 // 启用掷骰子按钮
                 document.getElementById('rollBtn').disabled = false;
-            }, 1500);
+            }, 100);
             break;
     }
 }
@@ -325,7 +344,7 @@ function addMoneyLog(message) {
     const logMessage = `[${timeString}] ${message}`;
     gameState.moneyLog.unshift(logMessage);
     // 限制日志数量
-    if (gameState.moneyLog.length > 10) {
+    if (gameState.moneyLog.length > 20) {
         gameState.moneyLog.pop();
     }
     // 更新日志显示
@@ -402,7 +421,7 @@ function handleBuy() {
             updateGameMessage(`轮到 ${gameState.players[gameState.currentPlayer].emoji} 掷骰子`);
             // 启用掷骰子按钮
             document.getElementById('rollBtn').disabled = false;
-        }, 1500);
+        }, 100);
     }
 }
 
@@ -417,7 +436,7 @@ function handleCancel() {
         updateGameMessage(`轮到 ${gameState.players[gameState.currentPlayer].emoji} 掷骰子`);
         // 启用掷骰子按钮
         document.getElementById('rollBtn').disabled = false;
-    }, 1500);
+    }, 100);
 }
 
 // 显示获胜者弹窗
@@ -431,40 +450,20 @@ function showWinnerModal(winner) {
             <p>${winner.emoji} 获胜！</p>
             <p>恭喜你赢得了这场游戏！</p>
             <div class="modal-buttons">
-                <button id="restartBtn">重新开始</button>
+                <button id="closeBtn">关闭</button>
             </div>
         </div>
     `;
     document.body.appendChild(modal);
     modal.style.display = 'block';
     
-    // 添加重新开始按钮事件
-    document.getElementById('restartBtn').addEventListener('click', restartGame);
+    // 添加关闭按钮事件
+    document.getElementById('closeBtn').addEventListener('click', () => {
+        modal.remove();
+    });
 }
 
-// 重新开始游戏
-function restartGame() {
-    // 隐藏获胜者弹窗
-    const winnerModal = document.getElementById('winnerModal');
-    if (winnerModal) {
-        winnerModal.remove();
-    }
-    
-    // 重置游戏状态
-    gameState = {
-        players: [
-            { id: 1, position: 0, money: 1500, name: '玩家1', emoji: '🐱' },
-            { id: 2, position: 0, money: 1500, name: '玩家2', emoji: '🐶' }
-        ],
-        currentPlayer: 0,
-        tiles: [],
-        gameMessage: '',
-        moneyLog: []
-    };
-    
-    // 重新初始化游戏
-    initGame();
-}
+
 
 // 处理机会卡
 function handleChanceCard(player, card) {
@@ -483,10 +482,12 @@ function handleChanceCard(player, card) {
             break;
         case '前进3格':
             player.position = (player.position + 3) % TILE_COUNT;
+            addMoneyLog(`${player.emoji} 前进 3 格（机会卡）`);
             renderPlayerMarkers();
             break;
         case '后退2格':
             player.position = (player.position - 2 + TILE_COUNT) % TILE_COUNT;
+            addMoneyLog(`${player.emoji} 后退 2 格（机会卡）`);
             renderPlayerMarkers();
             break;
         case '直接到起点':
@@ -520,7 +521,10 @@ function handleChanceCard(player, card) {
             }
             if (nearestProperty !== -1) {
                 player.position = nearestProperty;
+                addMoneyLog(`${player.emoji} 前进到最近的物业（机会卡）`);
                 renderPlayerMarkers();
+            } else {
+                addMoneyLog(`${player.emoji} 未找到最近的物业（机会卡）`);
             }
             break;
     }
