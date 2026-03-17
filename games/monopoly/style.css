@@ -1,0 +1,557 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f0f0f0;
+    color: #333;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.game-container {
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    padding: 20px;
+    width: 95%;
+    max-width: 1200px;
+    text-align: center;
+}
+
+h1 {
+    color: #333;
+    margin-bottom: 20px;
+    font-size: 2rem;
+}
+
+.game-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+}
+
+.game-info-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+}
+
+.game-logs {
+    padding: 5px;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 10px;
+    width: 100%;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.game-logs h3 {
+    margin-bottom: 10px;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.money-log {
+    font-size: 0.8rem;
+}
+
+.money-log div {
+    margin-bottom: 5px;
+    padding: 3px;
+    background-color: rgba(255, 255, 255, 0.7);
+    border-radius: 3px;
+}
+
+.player-info {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+}
+
+.player {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.player-money {
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: #4ecdc4;
+}
+
+.player-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+}
+
+.player1 .player-icon {
+    background-color: #ff6b6b;
+}
+
+.player2 .player-icon {
+    background-color: #4ecdc4;
+}
+
+#rollBtn {
+    background-color: #4ecdc4;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#rollBtn:hover {
+    background-color: #45b7aa;
+}
+
+#diceResult {
+    font-size: 1.5rem;
+    font-weight: bold;
+    min-width: 50px;
+}
+
+.board-container {
+    margin: 20px 0;
+    overflow: auto;
+}
+
+.board {
+    position: relative;
+    margin: 0 auto;
+    transition: all 0.5s ease;
+}
+
+/* 横版布局 */
+@media (orientation: landscape) {
+    .board {
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        grid-template-rows: repeat(4, 1fr);
+        grid-template-areas: 
+            "tile17 tile16 tile15 tile14 tile13 tile12 tile11 tile9"
+            "tile18 . . . . . . tile10"
+            "tile19 . . . . . . tile8"
+            "tile20 tile1 tile2 tile3 tile4 tile5 tile6 tile7";
+        width: 90vw;
+        max-width: 1000px;
+        height: 45vw;
+        max-height: 500px;
+    }
+    
+    .game-info {
+        grid-area: 2 / 2 / 4 / 8;
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        background-color: rgba(255, 255, 255, 0.8);
+        border-radius: 10px;
+        padding: 10px;
+        z-index: 5;
+    }
+
+    .game-info-content {
+        flex-direction: row;
+    }
+    
+    .game-logs {
+        max-height: 200px;
+        width: 250px;
+    }
+
+    .tile:nth-child(2) { grid-area: tile1; }
+    .tile:nth-child(3) { grid-area: tile2; }
+    .tile:nth-child(4) { grid-area: tile3; }
+    .tile:nth-child(5) { grid-area: tile4; }
+    .tile:nth-child(6) { grid-area: tile5; }
+    .tile:nth-child(7) { grid-area: tile6; }
+    .tile:nth-child(8) { grid-area: tile7; }
+    .tile:nth-child(9) { grid-area: tile8; }
+    .tile:nth-child(10) { grid-area: tile9; }
+    .tile:nth-child(11) { grid-area: tile10; }
+    .tile:nth-child(12) { grid-area: tile11; }
+    .tile:nth-child(13) { grid-area: tile12; }
+    .tile:nth-child(14) { grid-area: tile13; }
+    .tile:nth-child(15) { grid-area: tile14; }
+    .tile:nth-child(16) { grid-area: tile15; }
+    .tile:nth-child(17) { grid-area: tile16; }
+    .tile:nth-child(18) { grid-area: tile17; }
+    .tile:nth-child(19) { grid-area: tile18; }
+    .tile:nth-child(20) { grid-area: tile19; }
+    .tile:nth-child(21) { grid-area: tile20; }
+    
+    /* 箭头方向 - 横版 */
+    .tile:nth-child(2) .arrow::after { content: '→'; }
+    .tile:nth-child(3) .arrow::after { content: '→'; }
+    .tile:nth-child(4) .arrow::after { content: '→'; }
+    .tile:nth-child(5) .arrow::after { content: '→'; }
+    .tile:nth-child(6) .arrow::after { content: '→'; }
+    .tile:nth-child(7) .arrow::after { content: '→'; }
+    .tile:nth-child(8) .arrow::after { content: '→'; }
+    .tile:nth-child(9) .arrow::after { content: '↑'; }
+    .tile:nth-child(10) .arrow::after { content: '↑'; }
+    .tile:nth-child(11) .arrow::after { content: '↑'; }
+    .tile:nth-child(12) .arrow::after { content: '←'; }
+    .tile:nth-child(13) .arrow::after { content: '←'; }
+    .tile:nth-child(14) .arrow::after { content: '←'; }
+    .tile:nth-child(15) .arrow::after { content: '←'; }
+    .tile:nth-child(16) .arrow::after { content: '←'; }
+    .tile:nth-child(17) .arrow::after { content: '←'; }
+    .tile:nth-child(18) .arrow::after { content: '↓'; }
+    .tile:nth-child(19) .arrow::after { content: '↓'; }
+    .tile:nth-child(20) .arrow::after { content: '→'; }
+    .tile:nth-child(21) .arrow::after { content: '→'; }
+}
+
+/* 竖版布局 */
+@media (orientation: portrait) {
+    .board {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        grid-template-rows: repeat(8, 1fr);
+        grid-template-areas: 
+            "tile14 tile13 tile12 tile11"
+            "tile15 . . tile10"
+            "tile16 . . tile9"
+            "tile17 . . tile8"
+            "tile18 . . tile7"
+            "tile19 . . tile6"
+            "tile20 . . tile5"
+            "tile1 tile2 tile3 tile4";
+        width: 90vw;
+        max-width: 500px;
+        height: 180vw;
+        max-height: 600px;
+    }
+    
+    .game-info {
+        grid-area: 2 / 2 / 8 / 4;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background-color: rgba(255, 255, 255, 0.8);
+        padding: 5px;
+        z-index: 5;
+    }
+    .tile:nth-child(2) { grid-area: tile1; }
+    .tile:nth-child(3) { grid-area: tile2; }
+    .tile:nth-child(4) { grid-area: tile3; }
+    .tile:nth-child(5) { grid-area: tile4; }
+    .tile:nth-child(6) { grid-area: tile5; }
+    .tile:nth-child(7) { grid-area: tile6; }
+    .tile:nth-child(8) { grid-area: tile7; }
+    .tile:nth-child(9) { grid-area: tile8; }
+    .tile:nth-child(10) { grid-area: tile9; }
+    .tile:nth-child(11) { grid-area: tile10; }
+    .tile:nth-child(12) { grid-area: tile11; }
+    .tile:nth-child(13) { grid-area: tile12; }
+    .tile:nth-child(14) { grid-area: tile13; }
+    .tile:nth-child(15) { grid-area: tile14; }
+    .tile:nth-child(16) { grid-area: tile15; }
+    .tile:nth-child(17) { grid-area: tile16; }
+    .tile:nth-child(18) { grid-area: tile17; }
+    .tile:nth-child(19) { grid-area: tile18; }
+    .tile:nth-child(20) { grid-area: tile19; }
+    .tile:nth-child(21) { grid-area: tile20; }
+    
+    /* 箭头方向 - 竖版 */
+    .tile:nth-child(2) .arrow::after { content: '→'; }
+    .tile:nth-child(3) .arrow::after { content: '→'; }
+    .tile:nth-child(4) .arrow::after { content: '→'; }
+    .tile:nth-child(5) .arrow::after { content: '↑'; }
+    .tile:nth-child(6) .arrow::after { content: '↑'; }
+    .tile:nth-child(7) .arrow::after { content: '↑'; }
+    .tile:nth-child(8) .arrow::after { content: '↑'; }
+    .tile:nth-child(9) .arrow::after { content: '↑'; }
+    .tile:nth-child(10) .arrow::after { content: '↑'; }
+    .tile:nth-child(11) .arrow::after { content: '↑'; }
+    .tile:nth-child(12) .arrow::after { content: '←'; }
+    .tile:nth-child(13) .arrow::after { content: '←'; }
+    .tile:nth-child(14) .arrow::after { content: '←'; }
+    .tile:nth-child(15) .arrow::after { content: '↓'; }
+    .tile:nth-child(16) .arrow::after { content: '↓'; }
+    .tile:nth-child(17) .arrow::after { content: '↓'; }
+    .tile:nth-child(18) .arrow::after { content: '↓'; }
+    .tile:nth-child(19) .arrow::after { content: '↓'; }
+    .tile:nth-child(20) .arrow::after { content: '↓'; }
+    .tile:nth-child(21) .arrow::after { content: '→'; }
+}
+
+.tile {
+    border: 1px solid #ddd;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    background-color: #f9f9f9;
+    transition: all 0.3s;
+}
+
+.tile:hover {
+    background-color: #f0f0f0;
+}
+
+.tile.start {
+    background-color: #ffeb3b;
+    font-weight: bold;
+}
+
+.tile.property {
+    background-color: #e3f2fd;
+}
+
+.tile.chance {
+    background-color: #f3e5f5;
+}
+
+.tile.tax {
+    background-color: #ffebee;
+}
+
+.tile.jail {
+    background-color: #eceff1;
+}
+
+.tile.free-parking {
+    background-color: #e8f5e8;
+}
+
+.tile-emoji {
+    font-size: 1.2rem;
+    text-align: center;
+    margin-bottom: 2px;
+}
+
+.tile-name {
+    font-size: 0.8rem;
+    font-weight: bold;
+    margin-bottom: 2px;
+    word-wrap: break-word;
+    text-align: center;
+}
+
+.tile-price {
+    font-size: 0.7rem;
+    color: #666;
+    text-align: center;
+}
+
+.tile-rent {
+    font-size: 0.6rem;
+    color: #888;
+    text-align: center;
+}
+
+.tile-owner {
+    font-size: 0.7rem;
+    color: #333;
+    text-align: center;
+    padding: 2px;
+    background-color: rgba(255, 255, 255, 0.7);
+    border-radius: 3px;
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 3;
+}
+
+.arrow {
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: #666;
+}
+
+.player-marker {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    font-size: 0.8rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+}
+
+.player-marker.player1 {
+    top: 5px;
+    left: 5px;
+}
+
+.player-marker.player2 {
+    top: 5px;
+    right: 5px;
+}
+
+.game-message {
+    margin-top: 20px;
+    padding: 10px;
+    background-color: #f0f0f0;
+    border-radius: 5px;
+    min-height: 40px;
+}
+
+
+
+.game-rules {
+    margin-top: 20px;
+    padding: 10px;
+    background-color: #f0f0f0;
+    border-radius: 5px;
+}
+
+.game-rules h3 {
+    margin-bottom: 10px;
+    font-size: 1rem;
+}
+
+.game-rules ul {
+    list-style-type: disc;
+    list-style-position: inside;
+    font-size: 0.8rem;
+}
+
+.game-rules li {
+    margin-bottom: 5px;
+}
+
+/* 弹窗样式 */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 400px;
+    border-radius: 10px;
+    text-align: center;
+}
+
+.modal-content h3 {
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.modal-content p {
+    margin-bottom: 20px;
+    font-size: 1rem;
+}
+
+.modal-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+.modal-buttons button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#buyBtn {
+    background-color: #4ecdc4;
+    color: white;
+}
+
+#buyBtn:hover {
+    background-color: #45b7aa;
+}
+
+#cancelBtn {
+    background-color: #ff6b6b;
+    color: white;
+}
+
+#cancelBtn:hover {
+    background-color: #ee5a52;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .game-container {
+        padding: 10px;
+    }
+    
+    h1 {
+        font-size: 1.5rem;
+    }
+    
+    .game-info {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .player-info {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    #rollBtn {
+        width: 100%;
+        max-width: 200px;
+    }
+    
+    .tile-name {
+        font-size: 0.7rem;
+    }
+    
+    .tile-price {
+        font-size: 0.6rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .tile {
+        padding: 5px;
+    }
+    
+    .tile-name {
+        font-size: 0.6rem;
+    }
+    
+    .tile-price {
+        font-size: 0.5rem;
+    }
+    
+    .arrow {
+        font-size: 0.7rem;
+    }
+}

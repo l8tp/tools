@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>城市大富翁</title>
+    <link rel="manifest" href="manifest.json"/>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <h1>城市大富翁</h1>
+        <div class="board-container">
+            <div id="board" class="board">
+                <div class="game-info">
+                    <div class="game-info-content">
+                        <div class="player-info">
+                            <div class="player player1">
+                                <span>玩家1</span>
+                                <div class="player-icon">🐱</div>
+                                <div class="player-money">¥1500</div>
+                            </div>
+                            <div class="player player2">
+                                <span>玩家2</span>
+                                <div class="player-icon">🐶</div>
+                                <div class="player-money">¥1500</div>
+                            </div>
+                        </div>
+                        <button id="rollBtn">掷骰子</button>
+                        <div id="diceResult">0</div>
+                    </div>
+                    <div class="game-logs">
+                        <h3>资金流水</h3>
+                        <div id="moneyLog" class="money-log"></div>
+                    </div>
+                </div>
+                <!-- 固定的游戏板结构 -->
+                <div class="tile start">
+                    <div class="tile-emoji">🏁</div>
+                    <div class="tile-name">起点</div>
+                    <div class="tile-price"></div>
+                    <div class="tile-rent"></div>
+                    <div class="tile-owner"></div>
+                    <div class="arrow"></div>
+                </div>
+                <div class="tile property">
+                    <div class="tile-emoji">🏙️</div>
+                    <div class="tile-name">市中心</div>
+                    <div class="tile-price">¥200</div>
+                    <div class="tile-rent">租金: ¥20</div>
+                    <div class="tile-owner"></div>
+                    <div class="arrow"></div>
+                </div>
+                <div class="tile property">
+                    <div class="tile-emoji">🏬</div>
+                    <div class="tile-name">商业区</div>
+                    <div class="tile-price">¥180</div>
+                    <div class="tile-rent">租金: ¥18</div>
+                    <div class="tile-owner"></div>
+                    <div class="arrow"></div>
+                </div>
+                <div class="tile free-parking">
+                    <div class="tile-emoji">🌳</div>
+                    <div class="tile-name">公园</div>
+                    <div class="tile-price"></div>
+                    <div class="tile-rent"></div>
+                    <div class="tile-owner"></div>
+                    <div class="arrow"></div>
+                </div>
+                <div class="tile property">
+                    <div class="tile-emoji">🏠</div>
+                    <div class="tile-name">住宅区</div>
+                    <div class="tile-price">¥150</div>
+                    <div class="tile-rent">租金: ¥15</div>
+                    <div class="tile-owner"></div>
+                    <div class="arrow"></div>
+                </div>
+                <div class="tile chance">
+                    <div class="tile-emoji">🎁</div>
+                    <div class="tile-name">机会</div>
+                    <div class="tile-price"></div>
+                    <div class="tile-rent"></div>
+                    <div class="tile-owner"></div>
+                    <div class="arrow"></div>
+                </div>
+                <div class="tile property">
+                    <div class="tile-emoji">🏭</div>
+                    <div class="tile-name">工业区</div>
+                    <div class="tile-price">¥120</div>
+                    <div class="tile-rent">租金: ¥12</div>
+                    <div class="tile-owner"></div>
+                    <div class="arrow"></div>
+                </div>
+                <div class="tile tax">
+                    <div class="tile-emoji">💰</div>
+                    <div class="tile-name">税务</div>
+                    <div class="tile-price">¥100</div>
+                    <div class="tile-rent"></div>
+                    <div class="tile-owner"></div>
+                    <div class="arrow"></div>
+                </div>
+                <div class="tile property">
+                    <div class="tile-emoji">🏫</div>
+                    <div class="tile-name">学校</div>
+                    <div class="tile-price">¥160</div>
+                    <div class="tile-rent">租金: ¥16</div>
+                    <div class="tile-owner"></div>
+                    <div class="arrow"></div>
+                </div>
+                <div class="tile property">
+                    <div class="tile-emoji">🏥</div>
+                    <div class="tile-name">医院</div>
+                    <div class="tile-price">¥170</div>
+                    <div class="tile-rent">租金: ¥17</div>
+                    <div class="tile-owner"></div>
+                    <div class="arrow"></div>
+                </div>
+                <div class="tile jail">
+                    <div class="tile-emoji">🔒</div>
+                    <div class="tile-name">监狱</div>
+                    <div class="tile-price"></div>
+                    <div class="tile-rent"></div>
+                    <div class="tile-owner"></div>
+                    <div class="arrow"></div>
+                </div>
+                <div class="tile property">
+                    <div class="tile-emoji">🏟️</div>
+                    <div class="tile-name">体育馆</div>
+                    <div class="tile-price">¥190</div>
+                    <div class="tile-rent">租金: ¥19</div>
+                    <div class="tile-owner"></div>
+                    <div class="arrow"></div>
+                </div>
+                <div class="tile chance">
+                    <div class="tile-emoji">🎁</div>
+                    <div class="tile-name">机会</div>
+                    <div class="tile-price"></div>
+                    <div class="tile-rent"></div>
+                    <div class="tile-owner"></div>
+                    <div class="arrow"></div>
+                </div>
+                <div class="tile property">
+                    <div class="tile-emoji">🛍️</div>
+                    <div class="tile-name">购物中心</div>
+                    <div class="tile-price">¥220</div>
+                    <div class="tile-rent">租金: ¥22</div>
+                    <div class="tile-owner"></div>
+                    <div class="arrow"></div>
+                </div>
+                <div class="tile property">
+                    <div class="tile-emoji">✈️</div>
+                    <div class="tile-name">机场</div>
+                    <div class="tile-price">¥250</div>
+                    <div class="tile-rent">租金: ¥25</div>
+                    <div class="tile-owner"></div>
+                    <div class="arrow"></div>
+                </div>
+                <div class="tile tax">
+                    <div class="tile-emoji">💰</div>
+                    <div class="tile-name">税务</div>
+                    <div class="tile-price">¥200</div>
+                    <div class="tile-rent"></div>
+                    <div class="tile-owner"></div>
+                    <div class="arrow"></div>
+                </div>
+                <div class="tile property">
+                    <div class="tile-emoji">🏨</div>
+                    <div class="tile-name">酒店</div>
+                    <div class="tile-price">¥210</div>
+                    <div class="tile-rent">租金: ¥21</div>
+                    <div class="tile-owner"></div>
+                    <div class="arrow"></div>
+                </div>
+                <div class="tile property">
+                    <div class="tile-emoji">🏛️</div>
+                    <div class="tile-name">博物馆</div>
+                    <div class="tile-price">¥140</div>
+                    <div class="tile-rent">租金: ¥14</div>
+                    <div class="tile-owner"></div>
+                    <div class="arrow"></div>
+                </div>
+                <div class="tile chance">
+                    <div class="tile-emoji">🎁</div>
+                    <div class="tile-name">机会</div>
+                    <div class="tile-price"></div>
+                    <div class="tile-rent"></div>
+                    <div class="tile-owner"></div>
+                    <div class="arrow"></div>
+                </div>
+                <div class="tile property">
+                    <div class="tile-emoji">🚉</div>
+                    <div class="tile-name">火车站</div>
+                    <div class="tile-price">¥130</div>
+                    <div class="tile-rent">租金: ¥13</div>
+                    <div class="tile-owner"></div>
+                    <div class="arrow"></div>
+                </div>
+            </div>
+        </div>
+        <div class="game-message" id="gameMessage"></div>
+        <div class="game-rules">
+            <h3>游戏规则</h3>
+            <ul>
+                <li>双方玩家轮流掷骰子，根据点数移动</li>
+                <li>到达未购买的物业可以购买</li>
+                <li>到达其他玩家的物业需要支付租金</li>
+                <li>经过起点获得200元</li>
+                <li>抽到机会卡会触发随机事件</li>
+                <li>支付税务需要扣除相应金额</li>
+                <li>资金为0时游戏结束</li>
+            </ul>
+        </div>
+        <!-- 购买弹窗 -->
+        <div id="buyModal" class="modal">
+            <div class="modal-content">
+                <h3>购买物业</h3>
+                <p id="modalMessage"></p>
+                <div class="modal-buttons">
+                    <button id="buyBtn">购买</button>
+                    <button id="cancelBtn">取消</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+    <script>
+        window.addEventListener('load', async () => {
+            if('serviceWorker' in navigator) {
+                try{
+                    const registration = await navigator.serviceWorker.register('sw.js')
+                }catch(err){
+                    console.log(err)
+                }
+            }else{
+                console.log('浏览器不支持service worker注册失败')
+            }
+            if(!navigator.onLine){
+                alert('本页面采用PWA技术，没有网络也能使用') 
+                new Notification('提示', {body: '本页面采用PWA技术，没有网络也能使用'});
+            }
+            window.addEventListener('online', ()=>{
+                alert('网络已连接') 
+                new Notification('提示', {body: '网络已连接'});
+            })
+        });
+    </script>
+</body>
+</html>
