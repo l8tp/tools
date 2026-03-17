@@ -1,4 +1,4 @@
-const CACHE_NAME = 'monopoly_v1';
+const CACHE_NAME = 'monopoly_v1.1';
 const CACHE_URLS = [
     'index.html',
     'style.css',

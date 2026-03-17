@@ -239,7 +239,7 @@
                 new Notification('提示', {body: '本页面采用PWA技术，没有网络也能使用'});
             }
             window.addEventListener('online', ()=>{
-                alert('网络已连接') 
+                console.log('网络已连接') 
                 new Notification('提示', {body: '网络已连接'});
             })
         });
