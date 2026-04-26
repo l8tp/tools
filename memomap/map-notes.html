@@ -227,7 +227,6 @@
       max-width: 100%;
       max-height: 80vh;
       overflow-y: auto;
-      padding-bottom: env(safe-area-inset-bottom, 20px);
     }
 
     @media (min-width: 768px) {
@@ -652,12 +651,7 @@
       }
 
       modal.classList.add('active');
-      setTimeout(() => {
-        titleInput.focus();
-        setTimeout(() => {
-          titleInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }, 300);
-      }, 100);
+      setTimeout(() => titleInput.focus(), 100);
     }
 
     function closeModal() {
@@ -888,37 +882,6 @@
         window.addEventListener('online', ()=>{
             new Notification('提示', {body: '网络已连接'});
         })
-    });
-
-    const modalContent = document.querySelector('.modal-content');
-    const formInputs = modalContent.querySelectorAll('input, textarea');
-
-    formInputs.forEach(input => {
-      input.addEventListener('focus', function() {
-        setTimeout(() => {
-          this.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }, 200);
-      });
-    });
-
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', () => {
-        const focusedElement = document.activeElement;
-        if (focusedElement && (focusedElement.tagName === 'INPUT' || focusedElement.tagName === 'TEXTAREA')) {
-          setTimeout(() => {
-            focusedElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }, 100);
-        }
-      });
-    }
-
-    window.addEventListener('resize', () => {
-      const focusedElement = document.activeElement;
-      if (focusedElement && (focusedElement.tagName === 'INPUT' || focusedElement.tagName === 'TEXTAREA')) {
-        setTimeout(() => {
-          focusedElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }, 200);
-      }
     });
   </script>
 </body>
