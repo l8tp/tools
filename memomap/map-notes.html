@@ -863,6 +863,25 @@
         }
       );
     }
+
+    window.addEventListener('load', async () => {
+        if('serviceWorker' in navigator) {
+            try{
+                const registration = await navigator.serviceWorker.register('sw.js')
+            }catch(err){
+                console.log(err)
+            }
+        }else{
+            console.log('浏览器不支持service worker注册失败')
+        }
+        if(!navigator.onLine){
+            alert('本页面采用PWA技术，没有网络也能使用') 
+            new Notification('提示', {body: '本页面采用PWA技术，没有网络也能使用'});
+        }
+        window.addEventListener('online', ()=>{
+            new Notification('提示', {body: '网络已连接'});
+        })
+    });
   </script>
 </body>
 </html>
