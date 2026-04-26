@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>地图备忘录</title>
+  <title>地图笔记</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     * {
@@ -21,6 +20,12 @@
       background: #f5f5f5;
     }
 
+    @media (min-width: 768px) {
+      body {
+        flex-direction: row;
+      }
+    }
+
     #sidebar {
       width: 100%;
       max-height: 40vh;
@@ -32,24 +37,61 @@
       order: 2;
     }
 
+    @media (min-width: 768px) {
+      #sidebar {
+        width: 350px;
+        max-height: 100vh;
+        order: 1;
+        box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+      }
+    }
+
     .header {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
-      padding: 3px;
+      padding: 3px 10px;
       text-align: center;
     }
 
     .header h1 {
-      font-size: 20px;
-      margin-bottom: 3px;
+      font-size: 18px;
     }
 
-    .header p {
+    .toolbar {
+      padding: 10px;
+      border-bottom: 1px solid #e0e0e0;
+      background: #fafafa;
+      display: flex;
+      gap: 8px;
+    }
+
+    .toolbar button {
+      flex: 1;
+      padding: 8px;
+      border: none;
+      border-radius: 6px;
       font-size: 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+      background: #667eea;
+      color: white;
+    }
+
+    .toolbar button:hover {
+      background: #5568d3;
+    }
+
+    .toolbar button.secondary {
+      background: #e0e0e0;
+      color: #333;
+    }
+
+    .toolbar button.secondary:hover {
+      background: #d0d0d0;
     }
 
     .search-box {
-      padding: 10px 15px;
+      padding: 10px;
       border-bottom: 1px solid #e0e0e0;
       background: #fafafa;
     }
@@ -146,6 +188,13 @@
       order: 1;
     }
 
+    @media (min-width: 768px) {
+      #map {
+        height: 100vh;
+        order: 2;
+      }
+    }
+
     .modal {
       display: none;
       position: fixed;
@@ -157,6 +206,12 @@
       z-index: 2000;
       justify-content: center;
       align-items: flex-end;
+    }
+
+    @media (min-width: 768px) {
+      .modal {
+        align-items: center;
+      }
     }
 
     .modal.active {
@@ -171,6 +226,13 @@
       max-width: 100%;
       max-height: 80vh;
       overflow-y: auto;
+    }
+
+    @media (min-width: 768px) {
+      .modal-content {
+        max-width: 500px;
+        border-radius: 16px;
+      }
     }
 
     .modal-content h2 {
@@ -283,23 +345,32 @@
     ::-webkit-scrollbar-thumb:hover {
       background: #555;
     }
+
+    #importInput {
+      display: none;
+    }
   </style>
 </head>
 <body>
   <div id="sidebar">
     <div class="header">
-      <h1>📍 地图备忘录-点击地图添加标记</h1>
+      <h1>📍 地图笔记-点击地图添加笔记</h1>
+    </div>
+    <div class="toolbar">
+      <button onclick="exportNotes()">📤 导出</button>
+      <button class="secondary" onclick="document.getElementById('importInput').click()">📥 导入</button>
+      <input type="file" id="importInput" accept=".json" onchange="importNotes(event)">
     </div>
     <div class="search-box">
-      <input type="text" id="searchInput" placeholder="搜索备忘录...">
+      <input type="text" id="searchInput" placeholder="搜索笔记...">
     </div>
     <div class="marker-list" id="markerList">
       <div class="empty-state">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
           <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
         </svg>
-        <p>还没有备忘录</p>
-        <p>点击地图上的任意位置添加标记</p>
+        <p>还没有笔记</p>
+        <p>点击地图上的任意位置添加笔记</p>
       </div>
     </div>
   </div>
@@ -308,7 +379,7 @@
 
   <div class="modal" id="markerModal">
     <div class="modal-content">
-      <h2 id="modalTitle">添加备忘录</h2>
+      <h2 id="modalTitle">添加笔记</h2>
       <form id="markerForm">
         <div class="form-group">
           <label for="markerTitle">标题 *</label>
@@ -319,8 +390,8 @@
           <input type="text" id="markerCategory" placeholder="例如：工作、旅行、收藏...">
         </div>
         <div class="form-group">
-          <label for="markerNote">备注</label>
-          <textarea id="markerNote" placeholder="添加详细描述..."></textarea>
+          <label for="markerNote">内容</label>
+          <textarea id="markerNote" placeholder="添加详细内容..."></textarea>
         </div>
         <input type="hidden" id="markerId">
         <div class="modal-buttons">
@@ -346,17 +417,97 @@
     let markerLayer = L.layerGroup().addTo(map);
     let tempMarker = null;
     let editingId = null;
+    let userLocationMarker = null;
+    let userAccuracyCircle = null;
 
     function generateId() {
-      return 'marker_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      return 'note_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    }
+
+    function showMyLocation() {
+      if (!navigator.geolocation) {
+        alert('您的浏览器不支持地理定位功能');
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        function(position) {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          const accuracy = position.coords.accuracy;
+
+          map.setView([lat, lng], 15);
+
+          if (userLocationMarker) {
+            map.removeLayer(userLocationMarker);
+          }
+          if (userAccuracyCircle) {
+            map.removeLayer(userAccuracyCircle);
+          }
+
+          const userIcon = L.divIcon({
+            html: `<div style="
+              width: 20px;
+              height: 20px;
+              background: #4285f4;
+              border: 3px solid white;
+              border-radius: 50%;
+              box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            "></div>`,
+            className: 'user-location-marker',
+            iconSize: [20, 20],
+            iconAnchor: [10, 10]
+          });
+
+          userLocationMarker = L.marker([lat, lng], { icon: userIcon })
+            .bindPopup(`
+              <div style="text-align: center;">
+                <p style="margin: 0; font-weight: bold;">📍 我的位置</p>
+                <p style="margin: 5px 0 0 0; font-size: 12px; color: #666;">
+                  ${lat.toFixed(6)}, ${lng.toFixed(6)}<br>
+                  精度: ±${Math.round(accuracy)}米
+                </p>
+              </div>
+            `)
+            .addTo(map);
+
+          userAccuracyCircle = L.circle([lat, lng], {
+            radius: accuracy,
+            color: '#4285f4',
+            fillColor: '#4285f4',
+            fillOpacity: 0.1,
+            weight: 1
+          }).addTo(map);
+        },
+        function(error) {
+          let message = '获取位置失败';
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              message = '您拒绝了位置请求，请在浏览器设置中允许位置访问';
+              break;
+            case error.POSITION_UNAVAILABLE:
+              message = '位置信息不可用';
+              break;
+            case error.TIMEOUT:
+              message = '获取位置超时';
+              break;
+          }
+          alert(message);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
     }
 
     function saveToStorage() {
-      localStorage.setItem('mapMemoMarkers', JSON.stringify(markers));
+      localStorage.setItem('mapNotes', JSON.stringify(markers));
     }
 
     function loadFromStorage() {
-      const stored = localStorage.getItem('mapMemoMarkers');
+      const stored = localStorage.getItem('mapNotes');
       if (stored) {
         markers = JSON.parse(stored);
         markers.forEach(m => addMarkerToMap(m, false));
@@ -380,7 +531,7 @@
           <div style="min-width: 200px;">
             <h3 style="margin: 0 0 5px 0; color: #333;">${data.title}</h3>
             ${data.category ? `<p style="margin: 5px 0; color: #667eea; font-size: 12px;">📁 ${data.category}</p>` : ''}
-            <p style="margin: 5px 0; color: #666; font-size: 12px; white-space: pre-wrap;">${data.note || '无备注'}</p>
+            <p style="margin: 5px 0; color: #666; font-size: 12px; white-space: pre-wrap;">${data.note || '无内容'}</p>
             <p style="margin: 8px 0 0 0; color: #999; font-size: 11px;">${data.lat.toFixed(6)}, ${data.lng.toFixed(6)}</p>
             <p style="margin: 3px 0 0 0; color: #999; font-size: 11px;">${new Date(data.createdAt).toLocaleString('zh-CN')}</p>
           </div>
@@ -404,8 +555,8 @@
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
             </svg>
-            <p>${filteredMarkers ? '未找到匹配的备忘录' : '还没有备忘录'}</p>
-            <p>${filteredMarkers ? '尝试其他搜索词' : '点击地图上的任意位置添加标记'}</p>
+            <p>${filteredMarkers ? '未找到匹配的笔记' : '还没有笔记'}</p>
+            <p>${filteredMarkers ? '尝试其他搜索词' : '点击地图上的任意位置添加笔记'}</p>
           </div>
         `;
         return;
@@ -417,7 +568,7 @@
           <div class="marker-item" data-id="${m.id}" onclick="locateMarker('${m.id}')">
             <h3>${m.title}</h3>
             ${m.category ? `<p>📁 ${m.category}</p>` : ''}
-            <p>${m.note || '无备注'}</p>
+            <p>${m.note || '无内容'}</p>
             <div class="coords">${m.lat.toFixed(6)}, ${m.lng.toFixed(6)}</div>
             <div class="actions">
               <button class="btn-edit" onclick="event.stopPropagation(); editMarker('${m.id}')">编辑</button>
@@ -469,7 +620,7 @@
       if (id) {
         const marker = markers.find(m => m.id === id);
         if (marker) {
-          title.textContent = '编辑备忘录';
+          title.textContent = '编辑笔记';
           titleInput.value = marker.title;
           categoryInput.value = marker.category || '';
           noteInput.value = marker.note || '';
@@ -477,7 +628,7 @@
           editingId = marker.id;
         }
       } else {
-        title.textContent = '添加备忘录';
+        title.textContent = '添加笔记';
         titleInput.value = '';
         categoryInput.value = '';
         noteInput.value = '';
@@ -532,6 +683,7 @@
           markers[markerIndex].title = title;
           markers[markerIndex].category = category;
           markers[markerIndex].note = note;
+          markers[markerIndex].updatedAt = new Date().toISOString();
           saveToStorage();
           
           markerLayer.clearLayers();
@@ -564,13 +716,67 @@
     }
 
     function deleteMarker(id) {
-      if (confirm('确定要删除这个备忘录吗？')) {
+      if (confirm('确定要删除这个笔记吗？')) {
         markers = markers.filter(m => m.id !== id);
         markerLayer.clearLayers();
         markers.forEach(m => addMarkerToMap(m, false));
         saveToStorage();
         updateMarkerList();
       }
+    }
+
+    function exportNotes() {
+      if (markers.length === 0) {
+        alert('没有可导出的笔记');
+        return;
+      }
+
+      const data = JSON.stringify(markers, null, 2);
+      const blob = new Blob([data], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `map-notes-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function importNotes(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const importedMarkers = JSON.parse(e.target.result);
+          
+          if (!Array.isArray(importedMarkers)) {
+            alert('导入文件格式错误');
+            return;
+          }
+
+          let importedCount = 0;
+          importedMarkers.forEach(m => {
+            if (m.id && m.lat && m.lng && m.title) {
+              if (!markers.find(existing => existing.id === m.id)) {
+                markers.push(m);
+                addMarkerToMap(m, false);
+                importedCount++;
+              }
+            }
+          });
+
+          saveToStorage();
+          updateMarkerList();
+          alert(`成功导入 ${importedCount} 条笔记`);
+        } catch (error) {
+          alert('导入失败：文件格式不正确');
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
     }
 
     document.getElementById('searchInput').addEventListener('input', function(e) {
@@ -603,6 +809,60 @@
     });
 
     loadFromStorage();
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        function(position) {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          const accuracy = position.coords.accuracy;
+
+          map.setView([lat, lng], 15);
+
+          const userIcon = L.divIcon({
+            html: `<div style="
+              width: 20px;
+              height: 20px;
+              background: #4285f4;
+              border: 3px solid white;
+              border-radius: 50%;
+              box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            "></div>`,
+            className: 'user-location-marker',
+            iconSize: [20, 20],
+            iconAnchor: [10, 10]
+          });
+
+          userLocationMarker = L.marker([lat, lng], { icon: userIcon })
+            .bindPopup(`
+              <div style="text-align: center;">
+                <p style="margin: 0; font-weight: bold;">📍 我的位置</p>
+                <p style="margin: 5px 0 0 0; font-size: 12px; color: #666;">
+                  ${lat.toFixed(6)}, ${lng.toFixed(6)}<br>
+                  精度: ±${Math.round(accuracy)}米
+                </p>
+              </div>
+            `)
+            .addTo(map);
+
+          userAccuracyCircle = L.circle([lat, lng], {
+            radius: accuracy,
+            color: '#4285f4',
+            fillColor: '#4285f4',
+            fillOpacity: 0.1,
+            weight: 1
+          }).addTo(map);
+        },
+        function(error) {
+          console.log('获取位置失败:', error.message);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
+    }
   </script>
 </body>
 </html>
