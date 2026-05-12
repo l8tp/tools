@@ -1,10 +1,10 @@
 {
-  "name": "网页打砖块APP",
-  "short_name": "打砖块",
+  "name": "网页成语填词APP",
+  "short_name": "成语填词",
   "start_url": "index.html",
   "display": "standalone",
   "background_color": "#fff",
-  "description": "网页版的打砖块经典小游戏",
+  "description": "网页版的成语填词小游戏",
   "icons": [
     {
       "src": "images/touch/icon-192.png",
