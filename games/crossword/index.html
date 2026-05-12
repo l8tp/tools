@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>成语填字游戏</title>
+    <link rel="manifest" href="manifest.json"/>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Microsoft YaHei', 'SimHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 16px;
+            padding: 10px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 1100px;
+            width: 100%;
+        }
+        .header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 5px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .header h1 {
+            font-size: 20px;
+        }
+        .btn {
+            padding: 10px 22px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+        .btn-submit { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(102,126,234,0.4); }
+        .btn-reset { background: #f5f5f5; color: #666; }
+        .btn-reset:hover { background: #e0e0e0; }
+        .btn-refresh { background: #4ecdc4; color: white; }
+        .btn-refresh:hover { background: #45b7aa; }
+        .btn-hint { background: #ff9f43; color: white; }
+        .btn-hint:hover { background: #f08c00; }
+        .game-board {
+            display: inline-grid;
+            gap: 2px;
+            justify-content: center;
+            margin: 15px auto;
+            background: #e8e8e8;
+            padding: 4px;
+            border-radius: 8px;
+        }
+        .cell {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            font-weight: bold;
+        }
+        .cell-empty { background: #e8e8e8; }
+        .cell-input {
+            background: #fff;
+            border: 2px solid #ddd;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .cell-input:hover { border-color: #667eea; }
+        .cell-input.active {
+            border-color: #667eea;
+            box-shadow: 0 0 8px rgba(102,126,234,0.4);
+            background: #f0f4ff;
+        }
+        .cell-input input {
+            width: 100%;
+            height: 100%;
+            border: none;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            outline: none;
+            background: transparent;
+        }
+        .cell-correct { background: #d4edda !important; border-color: #28a745 !important; }
+        .cell-wrong { background: #ffe0e0 !important; border-color: #dc3545 !important; }
+        .cell-highlight { background: #fff3cd !important; border-color: #ffc107 !important; }
+        .number {
+            position: absolute;
+            top: 1px;
+            left: 2px;
+            font-size: 10px;
+            color: #667eea;
+            font-weight: bold;
+            z-index: 1;
+        }
+        .clues { background: #f9f9f9; border-radius: 12px; padding: 10px; margin-top: 5px; }
+        .clues h3 {
+            margin-bottom: 15px;
+            font-size: 18px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .clue-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 10px;
+        }
+        .clue-item {
+            padding: 10px 14px;
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+        .clue-item:hover { transform: translateX(4px); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .clue-item .dir {
+            display: inline-block;
+            padding: 2px 8px;
+            background: #667eea;
+            color: white;
+            border-radius: 4px;
+            font-size: 11px;
+            margin-right: 5px;
+        }
+        .clue-item .num { color: #667eea; font-weight: bold; margin-right: 3px; }
+        .message {
+            text-align: center;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 8px;
+            display: none;
+            font-size: 16px;
+        }
+        .message.success { background: #d4edda; color: #155724; display: block; }
+        .message.error { background: #f8d7da; color: #721c24; display: block; }
+        .message.info { background: #d1ecf1; color: #0c5460; display: block; }
+        .stats { text-align: center; color: #888; font-size: 13px; }
+        @media (max-width: 768px) {
+            .clue-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1> 成语填字游戏</h1>
+        <div>
+            <button class="btn btn-refresh" onclick="generateNewGame()">🔄 换一批</button>
+            <button class="btn btn-reset" onclick="resetGame()">🔁 重新开始</button>
+            <button class="btn btn-hint" onclick="giveHint()">💡 提示</button>
+            <button class="btn btn-submit" onclick="checkAnswers()">✅ 提交答案</button>
+        </div>
+    </div>
+    <div id="message" class="message"></div>
+    <div class="stats" id="stats"></div>
+    <div id="currentClue" style="text-align:center;padding:12px;margin:5px 15px;background:#f0f4ff;border-radius:8px;font-size:16px;color:#333;min-height:44px;display:flex;align-items:center;justify-content:center;border:2px dashed #667eea;"></div>
+    <div style="text-align:center"><div class="game-board" id="gameBoard"></div></div>
+    <div class="clues">
+        <h3>📝 题目提示</h3>
+        <div class="clue-grid" id="cluesContainer"></div>
+    </div>
+</div>
+
+<script>
+const GRID = 15;
+let gridData = [];
+let words = [];
+let cellPx = 48;
+
+const DB = [
+{idiom:"一心一意",clue:"形容做事专心致志，心思意念专一"},
+{idiom:"三心二意",clue:"形容意志不坚定，犹豫不决"},
+{idiom:"四面楚歌",clue:"比喻陷入四面受敌、孤立无援的境地"},
+{idiom:"五颜六色",clue:"形容色彩繁多，花样繁多"},
+{idiom:"六神无主",clue:"形容惊慌着急，没了主意"},
+{idiom:"七上八下",clue:"形容心里慌乱不安，无所适从"},
+{idiom:"八仙过海",clue:"比喻各自施展本领，互相比拼"},
+{idiom:"九牛一毛",clue:"比喻极大数量中极微小的数量"},
+{idiom:"十全十美",clue:"形容十分完美，毫无欠缺"},
+{idiom:"百发百中",clue:"形容射箭或射击技术高明，每次都命中"},
+{idiom:"千方百计",clue:"想尽或用尽种种办法"},
+{idiom:"万众一心",clue:"形容千万人一条心，团结一致"},
+{idiom:"一帆风顺",clue:"比喻非常顺利，没有任何阻碍"},
+{idiom:"三顾茅庐",clue:"比喻真心诚意，一再邀请"},
+{idiom:"四通八达",clue:"形容交通极便利，通向各方"},
+{idiom:"五花八门",clue:"比喻变化多端或花样繁多"},
+{idiom:"六亲不认",clue:"形容不重天伦，不通人情"},
+{idiom:"七嘴八舌",clue:"形容人多口杂，议论纷纷"},
+{idiom:"八面玲珑",clue:"形容人处世圆滑，面面俱到"},
+{idiom:"九死一生",clue:"形容经历极大危险而幸存"},
+{idiom:"百里挑一",clue:"形容十分出众，极为优秀"},
+{idiom:"千军万马",clue:"形容兵马很多，声势浩大"},
+{idiom:"万紫千红",clue:"形容百花齐放，色彩艳丽"},
+{idiom:"画龙点睛",clue:"比喻在关键处点明实质，使内容生动"},
+{idiom:"龙飞凤舞",clue:"形容气势奔放雄壮或书法有力"},
+{idiom:"虎背熊腰",clue:"形容人的身体魁梧健壮"},
+{idiom:"卧虎藏龙",clue:"形容隐藏着未被发现的人才"},
+{idiom:"龙争虎斗",clue:"形容斗争或竞赛很激烈"},
+{idiom:"凤毛麟角",clue:"比喻稀少而可贵的人或事物"},
+{idiom:"龙腾虎跃",clue:"形容跑跳时动作矫健有力"},
+{idiom:"画蛇添足",clue:"比喻做了多余的事，反而不合适"},
+{idiom:"如鱼得水",clue:"比喻遇到跟自己十分契合的人或环境"},
+{idiom:"水到渠成",clue:"比喻条件成熟，事情自然成功"},
+{idiom:"马到成功",clue:"形容事情顺利，一开始就取得胜利"},
+{idiom:"牛刀小试",clue:"比喻有大本领的人先在小事情上展示"},
+{idiom:"鸟语花香",clue:"形容春天的美好景象"},
+{idiom:"花好月圆",clue:"比喻美好圆满的生活"},
+{idiom:"月白风清",clue:"形容幽静美好的夜晚"},
+{idiom:"风和日丽",clue:"形容天气晴朗暖和"},
+{idiom:"日理万机",clue:"形容政务繁忙，工作辛苦"},
+{idiom:"机不可失",clue:"好的时机不可放过"},
+{idiom:"失而复得",clue:"失去后又得到"},
+{idiom:"得不偿失",clue:"所得的利益抵偿不了所受的损失"},
+{idiom:"得意忘形",clue:"形容高兴得失去了常态"},
+{idiom:"形影不离",clue:"形容彼此关系亲密，经常在一起"},
+{idiom:"井井有条",clue:"形容说话办事有条有理"},
+{idiom:"春风得意",clue:"形容人处境顺利，做事如意"},
+{idiom:"意气风发",clue:"形容精神振奋，气概豪迈"},
+{idiom:"发奋图强",clue:"下定决心，努力谋求强盛"},
+{idiom:"强词夺理",clue:"指无理强辩，明明没理硬说有理"},
+{idiom:"理直气壮",clue:"理由充分，说话气势就壮"},
+{idiom:"壮志凌云",clue:"形容理想宏伟远大"},
+{idiom:"云开见日",clue:"比喻黑暗过去，光明到来"},
+{idiom:"日新月异",clue:"形容发展变化快，每天都有新变化"},
+{idiom:"异想天开",clue:"比喻想法离奇而不切实际"},
+{idiom:"开门见山",clue:"比喻说话或写文章直截了当"},
+{idiom:"山清水秀",clue:"形容风景优美"},
+{idiom:"秀外慧中",clue:"外表秀丽，内心聪明"},
+{idiom:"中流砥柱",clue:"比喻在艰难环境中起支柱作用的人"},
+{idiom:"坚不可摧",clue:"非常坚固，摧毁不了"},
+{idiom:"摧枯拉朽",clue:"比喻腐朽势力很容易被打垮"},
+{idiom:"雕虫小技",clue:"比喻微小的技能"},
+{idiom:"技高一筹",clue:"稍强一些，技术高人一等"},
+{idiom:"脱颖而出",clue:"比喻本领全部显露出来"},
+{idiom:"双管齐下",clue:"比喻两个方面同时进行"},
+{idiom:"下笔成章",clue:"形容写文章很快"},
+{idiom:"柳暗花明",clue:"形容柳树成荫，繁花似锦的春天景象"},
+{idiom:"明察秋毫",clue:"形容人目光敏锐，任何细小事物都能看清"},
+{idiom:"损人利己",clue:"损害别人，使自己得到好处"},
+{idiom:"欲擒故纵",clue:"故意先放开他，使他放松戒备"},
+{idiom:"纵横交错",clue:"形容事物复杂，交叉错杂"},
+{idiom:"外强中干",clue:"外表好像很强大，实际上很空虚"},
+{idiom:"日积月累",clue:"形容长时间的积累"},
+{idiom:"危言耸听",clue:"故意说惊人的话让人震动"},
+{idiom:"听天由命",clue:"听任事态自然发展，不做主观努力"},
+{idiom:"光阴似箭",clue:"形容时间过得极快"},
+{idiom:"箭在弦上",clue:"比喻事情到了不得不做的时候"},
+{idiom:"勇往直前",clue:"勇敢地一直向前进"},
+{idiom:"前车之鉴",clue:"比喻先前的失败可作为以后的教训"},
+{idiom:"来日方长",clue:"将来的日子还长着，表示事有可为"},
+{idiom:"长治久安",clue:"形容国家长期安定巩固"},
+{idiom:"车水马龙",clue:"形容来往车马很多，热闹情景"},
+{idiom:"龙马精神",clue:"比喻人精神旺盛"},
+{idiom:"神出鬼没",clue:"比喻变化巧妙迅速，不易捉摸"},
+{idiom:"没齿难忘",clue:"一辈子也忘不了"},
+{idiom:"忘恩负义",clue:"忘记别人对自己的好处，背弃情义"},
+{idiom:"义不容辞",clue:"道义上不允许推辞"},
+{idiom:"辞旧迎新",clue:"告别旧的一年，迎接新年"},
+{idiom:"新陈代谢",clue:"指生物体不断用新物质代替旧物质"},
+{idiom:"谢天谢地",clue:"表示目的达到后满意轻松的心情"},
+{idiom:"地大物博",clue:"指国家疆土辽阔，资源丰富"},
+{idiom:"博古通今",clue:"通晓古今的事情"},
+{idiom:"今非昔比",clue:"现在不是过去能比得上的"},
+{idiom:"比翼双飞",clue:"比喻夫妻情投意合，并肩前进"},
+{idiom:"飞蛾扑火",clue:"比喻自取灭亡"},
+{idiom:"火树银花",clue:"形容张灯结彩或焰火的灿烂夜景"},
+{idiom:"花团锦簇",clue:"形容五彩缤纷，十分鲜艳多彩"},
+{idiom:"花言巧语",clue:"多指用来骗人的虚伪动听的话"},
+{idiom:"语重心长",clue:"话语恳切而有分量，情意深长"},
+{idiom:"长驱直入",clue:"形容进军迅猛，不可阻挡"},
+{idiom:"入木三分",clue:"形容书法笔力刚劲或见解深刻"},
+{idiom:"分秒必争",clue:"一分一秒也要争取，形容抓紧时间"},
+{idiom:"功德无量",clue:"称颂人恩德功劳极大"},
+{idiom:"行云流水",clue:"形容文章自然不受约束"},
+{idiom:"水滴石穿",clue:"比喻只要有恒心，不断努力就能成功"},
+{idiom:"和风细雨",clue:"比喻方式和缓，不粗暴"},
+{idiom:"雨过天晴",clue:"比喻由黑暗到光明"},
+{idiom:"雷霆万钧",clue:"比喻威力极大，不可阻挡"},
+{idiom:"乐善好施",clue:"喜欢做善事，乐于接济有困难的人"},
+{idiom:"德高望重",clue:"道德高尚，名望很大"},
+{idiom:"重见天日",clue:"比喻脱离黑暗，重见光明"},
+{idiom:"穷途末路",clue:"形容到了无路可走的地步"},
+{idiom:"路不拾遗",clue:"形容社会风气好"},
+{idiom:"余音绕梁",clue:"形容歌声优美，给人留下难忘印象"},
+{idiom:"子虚乌有",clue:"指假设的、不存在的事情"},
+{idiom:"有口皆碑",clue:"比喻人人称赞"},
+{idiom:"石破天惊",clue:"比喻文章议论新奇惊人"},
+{idiom:"惊天动地",clue:"形容事件声势或意义极大"},
+{idiom:"人山人海",clue:"人群如山似海，形容人非常多"},
+{idiom:"海阔天空",clue:"像大海天空一样广阔无边"},
+{idiom:"风调雨顺",clue:"形容风雨适合农时，年景好"},
+{idiom:"顺水推舟",clue:"比喻顺着趋势办事"},
+{idiom:"塞翁失马",clue:"比喻一时损失也许反而能得到好处"},
+{idiom:"瞻前顾后",clue:"形容顾虑太多，犹豫不决"},
+{idiom:"后起之秀",clue:"后来出现的优秀人物"},
+{idiom:"秀色可餐",clue:"形容女子姿容美丽或景物优美"},
+{idiom:"清风明月",clue:"比喻清闲无事"},
+{idiom:"沉鱼落雁",clue:"形容女子容貌美丽"},
+{idiom:"声东击西",clue:"造成打东边的声势，实际攻打西边"},
+{idiom:"心花怒放",clue:"形容极其高兴"},
+{idiom:"放虎归山",clue:"比喻把坏人放回老巢，留下祸根"},
+{idiom:"山高水长",clue:"象山一样高耸，如水一般长流"},
+{idiom:"长生不老",clue:"原为道教的话，后用作祝愿长寿之词"},
+{idiom:"老马识途",clue:"比喻有经验的人对事情比较熟悉"},
+{idiom:"暮鼓晨钟",clue:"比喻可以使人警觉醒悟的话"},
+{idiom:"化险为夷",clue:"化危险为平安，比喻转危为安"},
+{idiom:"若即若离",clue:"好像接近又好像不接近，形容关系疏淡"},
+{idiom:"道听途说",clue:"泛指没有根据的传闻"},
+{idiom:"四海为家",clue:"什么地方都可以当作自己的家"},
+{idiom:"家喻户晓",clue:"家家户户都知道，形容人所共知"},
+{idiom:"月明星稀",clue:"月亮明亮时星星就显得稀疏"},
+{idiom:"经久不息",clue:"经过长时间停不下来"},
+{idiom:"息事宁人",clue:"调解纠纷，使事情平息"},
+{idiom:"人定胜天",clue:"人力能够战胜自然"},
+{idiom:"天经地义",clue:"指绝对正确不能改变的道理"},
+{idiom:"义薄云天",clue:"形容非常有情有义，正义之气直上高空"},
+{idiom:"云蒸霞蔚",clue:"形容景物灿烂绚丽"},
+{idiom:"赤胆忠心",clue:"形容十分忠诚"},
+{idiom:"心猿意马",clue:"形容心里东想西想，安静不下来"},
+{idiom:"马不停蹄",clue:"比喻不停顿地向前走"},
+{idiom:"寻根究底",clue:"追求根底，追问一件事的原由"},
+{idiom:"生死存亡",clue:"形容局势已到最后关头"},
+{idiom:"亡羊补牢",clue:"比喻出了问题以后想办法补救"},
+{idiom:"牢不可破",clue:"异常坚固，不可摧毁"},
+{idiom:"破釜沉舟",clue:"比喻下决心不顾一切地干到底"},
+{idiom:"国泰民安",clue:"国家太平，人民安乐"},
+{idiom:"安居乐业",clue:"生活安定，对工作感到满意"},
+{idiom:"业精于勤",clue:"学业精深是由勤奋得来的"},
+{idiom:"勤能补拙",clue:"勤奋能够弥补笨拙"},
+{idiom:"波澜壮阔",clue:"比喻声势雄壮或规模巨大"},
+{idiom:"前功尽弃",clue:"以前的功劳全部丢失"},
+{idiom:"弃暗投明",clue:"离弃黑暗势力，投向光明力量"},
+{idiom:"明知故犯",clue:"明明知道不能做，却故意违犯"},
+{idiom:"平分秋色",clue:"比喻双方各得一半，不分上下"},
+{idiom:"天罗地网",clue:"比喻对坏人严加防范"},
+{idiom:"网开一面",clue:"比喻采取宽大态度，给人出路"},
+{idiom:"面面俱到",clue:"各方面都能照顾到"},
+{idiom:"止于至善",clue:"达到极完美的境界"},
+{idiom:"善始善终",clue:"做事情有好的开头也有好的结尾"},
+{idiom:"事在人为",clue:"指事情要靠人去做的"},
+{idiom:"为富不仁",clue:"为了发财致富，心狠手毒"},
+{idiom:"仁至义尽",clue:"竭尽仁义之道"},
+{idiom:"尽心竭力",clue:"费尽心思，使出全力"},
+{idiom:"力不从心",clue:"心里想做，可是力量够不上"},
+{idiom:"心平气和",clue:"心情平静，态度温和"},
+{idiom:"和气生财",clue:"指待人和善能招财进宝"},
+{idiom:"进退两难",clue:"前进和后退都难，比喻难以决定"},
+{idiom:"难能可贵",clue:"不容易做到的事做到了，非常可贵"},
+{idiom:"目不暇接",clue:"东西多，眼睛都看不过来"},
+{idiom:"接二连三",clue:"一个接着一个，接连不断"},
+{idiom:"三思而行",clue:"指经过反复考虑，然后再去做"},
+{idiom:"思前想后",clue:"形容前前后后地反复思考"},
+{idiom:"后生可畏",clue:"年轻人可敬畏，能超过前辈"},
+{idiom:"掉以轻心",clue:"对事情采取轻率漫不经心的态度"},
+{idiom:"心口如一",clue:"心里想的和嘴里说的一样"},
+{idiom:"一诺千金",clue:"许下的诺言有千金的价值，比喻说话算数"},
+{idiom:"金碧辉煌",clue:"形容建筑物装饰华丽，光彩夺目"},
+{idiom:"身临其境",clue:"亲自到了那个境地"},
+{idiom:"生生不息",clue:"指新生事物不断发生，没有终止"},
+{idiom:"遗世独立",clue:"指超脱于世俗，独立于世外"},
+{idiom:"立竿见影",clue:"比喻立即见效"},
+{idiom:"书香门第",clue:"旧时指上辈有读书人的家庭"},
+{idiom:"人面桃花",clue:"形容男子追念曾经邂逅的女子"},
+{idiom:"花枝招展",clue:"形容打扮得十分艳丽"},
+{idiom:"展翅高飞",clue:"比喻充分发挥才能，施展抱负"},
+{idiom:"飞黄腾达",clue:"比喻骤然得志，官职升得很快"},
+{idiom:"半途而废",clue:"指做事不能坚持到底"},
+{idiom:"废寝忘食",clue:"顾不得睡觉忘记吃饭，形容专心努力"},
+{idiom:"尽善尽美",clue:"极其完善美好，没有缺点"},
+{idiom:"美中不足",clue:"大体很好，但还有不足"},
+{idiom:"足智多谋",clue:"富有智慧，善于谋划"},
+{idiom:"指鹿为马",clue:"比喻故意颠倒黑白，混淆是非"},
+{idiom:"马革裹尸",clue:"指英勇牺牲在战场"},
+{idiom:"念念不忘",clue:"形容牢记于心，时刻不忘"},
+{idiom:"口若悬河",clue:"讲起话来滔滔不绝"},
+{idiom:"河清海晏",clue:"比喻天下太平"},
+{idiom:"海纳百川",clue:"比喻包容的东西广泛，数量巨大"},
+{idiom:"川流不息",clue:"形容行人车马像水流一样连续不断"},
+{idiom:"水落石出",clue:"比喻事情的真相完全显露出来"},
+{idiom:"出人头地",clue:"指高人一等，形容成就突出"},
+{idiom:"李代桃僵",clue:"比喻代人受过"},
+{idiom:"舞文弄墨",clue:"玩弄文字技巧"},
+{idiom:"墨守成规",clue:"指思想保守，守着老规矩不肯改变"},
+{idiom:"步步为营",clue:"形容进军小心谨慎"},
+{idiom:"节外生枝",clue:"比喻在问题之外又岔出新问题"},
+{idiom:"枝繁叶茂",clue:"枝叶繁密茂盛"},
+{idiom:"竹报平安",clue:"比喻平安家信"},
+{idiom:"安贫乐道",clue:"安于贫穷，以坚持信念为乐"},
+{idiom:"道貌岸然",clue:"指神态严肃，一本正经的样子"},
+{idiom:"出神入化",clue:"形容技艺高超达到绝妙境界"},
+{idiom:"化零为整",clue:"把零散部分集中为整体"},
+{idiom:"发号施令",clue:"发布命令，形容指挥别人"},
+{idiom:"目不转睛",clue:"眼珠一动不动盯着看，形容注意力集中"},
+{idiom:"里应外合",clue:"外面攻打，里面接应"},
+{idiom:"合情合理",clue:"符合情理"},
+{idiom:"壮志未酬",clue:"宏伟的志愿未能实现"},
+{idiom:"力挽狂澜",clue:"比喻尽力挽回危险局势"},
+{idiom:"随波逐流",clue:"比喻没有坚定立场"},
+{idiom:"流芳百世",clue:"好的名声永远流传下去"},
+{idiom:"世外桃源",clue:"指环境幽静生活安逸的地方"},
+{idiom:"原封不动",clue:"比喻完全按照原样，一点不加变动"},
+{idiom:"咎由自取",clue:"灾祸是自己招来的，自作自受"},
+{idiom:"取长补短",clue:"吸取别人长处来弥补自己不足"},
+{idiom:"短兵相接",clue:"比喻面对面激烈斗争"},
+{idiom:"尘埃落定",clue:"比喻事情终于有了结果"},
+{idiom:"苦尽甘来",clue:"艰难日子过完，美好日子来到"},
+{idiom:"来龙去脉",clue:"比喻事情的来由和前因后果"},
+{idiom:"情投意合",clue:"形容双方思想感情融洽"},
+{idiom:"实事求是",clue:"从实际情况出发，正确处理问题"},
+{idiom:"直截了当",clue:"形容说话做事爽快干脆"},
+{idiom:"当机立断",clue:"在紧要时刻立即做出决断"},
+{idiom:"义正词严",clue:"理由正当充足，措词严正有力"},
+{idiom:"物极必反",clue:"事物发展到极端会向相反方向转化"},
+{idiom:"反客为主",clue:"客人反过来成为主人"},
+{idiom:"见义勇为",clue:"看到正义的事就勇敢去做"},
+{idiom:"乐此不疲",clue:"因酷爱某事而不感觉厌烦"},
+{idiom:"才高八斗",clue:"形容人文才高超"},
+{idiom:"斗转星移",clue:"星斗变动位置，指时间变化"},
+{idiom:"移花接木",clue:"比喻暗中更换人或事物"},
+{idiom:"木已成舟",clue:"比喻事情已成定局，无法改变"},
+{idiom:"顿开茅塞",clue:"比喻思想忽然开窍"},
+{idiom:"除暴安良",clue:"铲除强暴，安抚善良人民"},
+{idiom:"齐头并进",clue:"多方面同时前进"},
+{idiom:"兵强马壮",clue:"形容军队实力强"},
+{idiom:"情同手足",clue:"交情很深，如同兄弟"},
+{idiom:"与人为善",clue:"善意帮助人"},
+{idiom:"投桃报李",clue:"比喻友好往来或互相赠送"},
+{idiom:"周而复始",clue:"转了一圈又一圈，不断循环"},
+{idiom:"石沉大海",clue:"比喻从此没有消息"},
+{idiom:"言归于好",clue:"指彼此重新和好"},
+{idiom:"好高骛远",clue:"不切实际追求过高目标"},
+{idiom:"远见卓识",clue:"远大的眼光，高明的见识"},
+{idiom:"同舟共济",clue:"比喻团结互助，同心协力"},
+{idiom:"济济一堂",clue:"形容很多有才能的人聚集"},
+{idiom:"源远流长",clue:"源头很远水流很长，比喻历史悠久"},
+{idiom:"功成名就",clue:"功业建立了，名声也有了"},
+{idiom:"助人为乐",clue:"帮助人就是快乐"},
+{idiom:"乐不思蜀",clue:"在新环境中得到乐趣不再想回去"},
+{idiom:"空中楼阁",clue:"比喻虚幻事物或脱离实际的空想"},
+{idiom:"人云亦云",clue:"没有主见，只会随声附和"},
+{idiom:"云淡风轻",clue:"微风轻拂浮云淡薄，形容天气晴好"},
+{idiom:"轻车熟路",clue:"比喻事情又熟悉又容易"},
+{idiom:"后来居上",clue:"后来的超过先前的"},
+{idiom:"步步高升",clue:"指职位不断上升"},
+{idiom:"远走高飞",clue:"跑到很远的地方去"},
+{idiom:"壁垒森严",clue:"比喻防守严密或界限分明"},
+{idiom:"法不阿贵",clue:"法律不偏袒有权有势的人"},
+{idiom:"鬼斧神工",clue:"形容艺术技巧高超"},
+{idiom:"疑神疑鬼",clue:"形容非常多疑"},
+{idiom:"亲如手足",clue:"象兄弟一样的亲密"},
+{idiom:"手到擒来",clue:"比喻做事有把握，不费力就好"},
+{idiom:"国色天香",clue:"形容女子的美丽"},
+{idiom:"闻鸡起舞",clue:"比喻有志报国的人及时奋起"},
+{idiom:"龙盘虎踞",clue:"形容地势雄伟险要"},
+{idiom:"上善若水",clue:"最高境界的善行像水一样不争"},
+{idiom:"阴差阳错",clue:"比喻由于偶然因素造成差错"},
+{idiom:"任重道远",clue:"比喻责任重大，要长期奋斗"},
+{idiom:"俗不可耐",clue:"庸俗得使人受不了"},
+{idiom:"耐人寻味",clue:"形容意味深长，值得仔细体味"},
+{idiom:"家徒四壁",clue:"形容十分贫困，一无所有"},
+{idiom:"攻无不克",clue:"没有攻占不下来的"},
+{idiom:"克己奉公",clue:"约束私欲，以公事为重"},
+{idiom:"受宠若惊",clue:"因得到赏识而高兴又不安"},
+{idiom:"惊弓之鸟",clue:"比喻受过惊吓的人碰到动静就害怕"},
+{idiom:"鸟尽弓藏",clue:"比喻事成后把出力的人踢开"},
+{idiom:"藏龙卧虎",clue:"指隐藏着未被发现的人才"},
+{idiom:"盘根错节",clue:"比喻事情复杂，纠缠不清"},
+{idiom:"节衣缩食",clue:"省吃省穿，形容节约"},
+{idiom:"食不果腹",clue:"吃不饱肚子，形容生活贫困"},
+{idiom:"腹背受敌",clue:"前后都受到敌人的攻击"},
+{idiom:"屈指可数",clue:"形容数目很少"},
+{idiom:"说一不二",clue:"说怎么样就怎么样，形容说话算数"},
+{idiom:"山明水秀",clue:"山光明媚，水色秀丽"},
+{idiom:"缘木求鱼",clue:"比喻方向不对，不可能达到目的"},
+{idiom:"鱼龙混杂",clue:"比喻坏人和好人混在一起"},
+{idiom:"杂乱无章",clue:"又多又乱，没有条理"},
+{idiom:"流言蜚语",clue:"背后散布的诽谤性坏话"},
+{idiom:"三生有幸",clue:"比喻非常幸运"},
+{idiom:"幸灾乐祸",clue:"别人遇到灾祸时感到高兴"},
+{idiom:"祸不单行",clue:"不幸的事接二连三发生"},
+{idiom:"行之有效",clue:"实行起来有成效"},
+{idiom:"大义凛然",clue:"由于胸怀正义而神态庄严"},
+{idiom:"气宇轩昂",clue:"形容人精力充沛，风度不凡"},
+{idiom:"昂首挺胸",clue:"形容斗志高，士气旺"},
+{idiom:"胸有成竹",clue:"比喻做事之前已有通盘考虑"},
+{idiom:"竹篮打水",clue:"比喻白费力气，没有效果"},
+{idiom:"花红柳绿",clue:"形容明媚的春天景象"},
+{idiom:"海枯石烂",clue:"形容历时久远，比喻意志永远不变"},
+{idiom:"锦上添花",clue:"比喻好上加好，美上添美"},
+{idiom:"白驹过隙",clue:"形容时间过得极快"},
+{idiom:"风吹草动",clue:"比喻微小的变动"},
+{idiom:"顺理成章",clue:"顺着条理就能做好"},
+{idiom:"明明白白",clue:"清清楚楚，明确无误"},
+{idiom:"巧夺天工",clue:"人工精巧胜过天然"},
+{idiom:"投机取巧",clue:"用不正当手段谋取私利"},
+{idiom:"义气相投",clue:"志趣相同的人互相响应"},
+{idiom:"能屈能伸",clue:"失意时能忍耐，得志时能大干"},
+{idiom:"祸从口出",clue:"说话不谨慎容易惹祸"},
+{idiom:"出奇制胜",clue:"用对方意料不到的方法取胜"},
+{idiom:"亲冒矢石",clue:"指将帅亲自上阵"},
+{idiom:"光怪陆离",clue:"形容奇形怪状，五颜六色"},
+{idiom:"欢天喜地",clue:"形容非常高兴"},
+{idiom:"地利人和",clue:"表示优越地理条件和群众基础"},
+{idiom:"和颜悦色",clue:"脸色和蔼喜悦，形容和善可亲"},
+{idiom:"色胆包天",clue:"形容贪恋淫欲胆量很大"},
+{idiom:"天衣无缝",clue:"比喻事物周密完善，找不出毛病"},
+{idiom:"心慈手软",clue:"心怀恻隐而不忍下手"},
+{idiom:"玉洁冰清",clue:"形容人心地纯洁，品行端正"},
+{idiom:"清心寡欲",clue:"保持心地清净，减少欲念"},
+{idiom:"谈笑风生",clue:"谈话谈得高兴而有风趣"},
+{idiom:"生机勃勃",clue:"形容充满生命力"},
+{idiom:"怒发冲冠",clue:"形容极端愤怒"},
+{idiom:"冠冕堂皇",clue:"形容表面庄严体面"},
+{idiom:"土崩瓦解",clue:"比喻事物分裂不可收拾"},
+{idiom:"解甲归田",clue:"指战士退伍还乡"},
+{idiom:"逢场作戏",clue:"遇到机会偶尔凑热闹"},
+{idiom:"至理名言",clue:"最正确的道理，最精辟的言论"},
+{idiom:"言行一致",clue:"说的和做的完全一样"},
+{idiom:"外圆内方",clue:"比喻表面随和内心严正"},
+{idiom:"恨之入骨",clue:"恨到骨头里，形容痛恨到极点"},
+{idiom:"骨瘦如柴",clue:"形容消瘦到极点"},
+{idiom:"柴米油盐",clue:"泛指生活必需品"},
+{idiom:"博闻强识",clue:"见闻广博，记忆力强"},
+{idiom:"识途老马",clue:"比喻对某事物十分熟悉的人"},
+{idiom:"马放南山",clue:"比喻天下太平"},
+{idiom:"洋洋洒洒",clue:"形容文章谈话丰富明快"},
+{idiom:"良师益友",clue:"使人得到教益的好老师好朋友"},
+{idiom:"据理力争",clue:"依据道理竭力维护权益"},
+{idiom:"争强好胜",clue:"事事都喜欢超过别人"},
+{idiom:"快马加鞭",clue:"比喻加速前进"},
+{idiom:"鞭辟入里",clue:"形容分析透彻，切中要害"},
+{idiom:"合不拢嘴",clue:"指人高兴得关不住嘴"},
+{idiom:"声振林木",clue:"形容歌声高亢宏亮"},
+{idiom:"木人石心",clue:"形容意志坚定，诱惑不动心"},
+{idiom:"心不在焉",clue:"心思不在这里，思想不集中"},
+{idiom:"绝处逢生",clue:"在最危险时得到生路"},
+{idiom:"通情达理",clue:"懂人情明事理"},
+{idiom:"理屈词穷",clue:"理由站不住脚，被驳得无话可说"},
+{idiom:"欲盖弥彰",clue:"想掩盖反而更明显暴露"},
+{idiom:"著作等身",clue:"形容著述极多"},
+{idiom:"物换星移",clue:"比喻时间的变化"},
+{idiom:"移山倒海",clue:"比喻改造自然的巨大力量"},
+{idiom:"海晏河清",clue:"比喻天下太平"},
+{idiom:"纵虎归山",clue:"比喻把坏人放回老巢"},
+{idiom:"山穷水尽",clue:"比喻无路可走陷入绝境"},
+{idiom:"尽人皆知",clue:"人人都知道"},
+{idiom:"知恩图报",clue:"得到恩德懂得回报"},
+{idiom:"报仇雪恨",clue:"报冤仇除怨恨"},
+{idiom:"全心全意",clue:"投入全部精力，毫无保留"},
+{idiom:"意味深长",clue:"意思含蓄深远，耐人寻味"},
+{idiom:"藏之名山",clue:"形容著作极有价值"},
+{idiom:"总而言之",clue:"总括起来说"},
+{idiom:"言听计从",clue:"形容对某人非常信任"},
+{idiom:"从善如流",clue:"能迅速接受别人好意见"},
+{idiom:"花天酒地",clue:"形容沉湎在酒色之中"},
+{idiom:"牙牙学语",clue:"形容婴儿学大人说话"},
+{idiom:"视如珍宝",clue:"形容十分珍爱"},
+{idiom:"回心转意",clue:"改变态度不再坚持成见"},
+{idiom:"发扬蹈厉",clue:"比喻精神奋发，动作迅猛"},
+{idiom:"厉兵秣马",clue:"磨好兵器喂好马，形容准备战斗"},
+{idiom:"高枕无忧",clue:"比喻思想麻痹丧失警惕"},
+{idiom:"忧国忧民",clue:"为国家前途和人民命运担忧"},
+{idiom:"肝胆相照",clue:"比喻真心诚意互相坦诚"},
+{idiom:"照猫画虎",clue:"比喻照着样子模仿"},
+{idiom:"虎落平阳",clue:"比喻失势"},
+{idiom:"阳关大道",clue:"比喻光明的前途"},
+{idiom:"二分明月",clue:"形容美好的夜色"},
+{idiom:"瓜田李下",clue:"比喻容易引起嫌疑的场合"},
+{idiom:"言归正传",clue:"话头转到正题上来"},
+{idiom:"如出一辙",clue:"比喻两件事非常相似"},
+{idiom:"无与伦比",clue:"没有能跟它相比的"},
+{idiom:"比肩继踵",clue:"形容人很多很拥挤"},
+{idiom:"风吹雨打",clue:"比喻遭受磨难和考验"},
+{idiom:"动荡不安",clue:"形容局势不稳定"},
+{idiom:"顺水人情",clue:"利用机会顺便给人的好处"},
+{idiom:"关门大吉",clue:"指商店倒闭或企业破产"},
+{idiom:"吉星高照",clue:"形容人很幸运有福气"},
+{idiom:"失魂落魄",clue:"形容心神不定行动失常"},
+{idiom:"飞灾横祸",clue:"意外的灾祸"},
+{idiom:"欢欣鼓舞",clue:"形容高兴而振奋"},
+{idiom:"舞刀弄枪",clue:"比喻演练武艺"},
+{idiom:"枪林弹雨",clue:"形容战斗激烈"},
+{idiom:"雨后春笋",clue:"比喻事物迅速大量涌现"},
+{idiom:"损己利人",clue:"损害自己利益去帮助别人"},
+{idiom:"欲速不达",clue:"过于性急图快反而不能达到目的"},
+{idiom:"达官贵人",clue:"地位高的官吏和尊贵人物"},
+{idiom:"人杰地灵",clue:"有杰出人物降生地就成了名胜"},
+{idiom:"灵机一动",clue:"临时想出了一个办法"},
+{idiom:"时来运转",clue:"境况好转"},
+{idiom:"转败为胜",clue:"变失败为胜利"},
+{idiom:"胜券在握",clue:"很有把握一定可以成功"},
+{idiom:"握手言和",clue:"互相道歉重新和好"},
+{idiom:"和盘托出",clue:"完全说出来毫无保留"},
+{idiom:"凡夫俗子",clue:"泛指平庸的人"},
+{idiom:"雪泥鸿爪",clue:"比喻往事遗留的痕迹"},
+{idiom:"腾云驾雾",clue:"比喻奔驰迅速或头脑发昏"},
+{idiom:"雾里看花",clue:"比喻看事情不真切"},
+{idiom:"语无伦次",clue:"话讲得很乱没有条理"},
+{idiom:"开诚布公",clue:"以诚心待人，坦白无私"},
+{idiom:"众口铄金",clue:"形容舆论力量大"},
+{idiom:"金石为开",clue:"形容心诚志坚力量无穷"},
+{idiom:"远交近攻",clue:"联络远的国家进攻邻近国家"},
+{idiom:"攻其不备",clue:"趁敌人没有防备时进攻"},
+{idiom:"用武之地",clue:"可以施展才能的地方或机会"},
+{idiom:"哭笑不得",clue:"形容很尴尬"},
+{idiom:"得心应手",clue:"心里怎么想手就能怎么做"},
+{idiom:"手不释卷",clue:"形容勤奋好学"},
+{idiom:"卷土重来",clue:"比喻失败后重新恢复势力"},
+{idiom:"来势汹汹",clue:"气势很厉害"},
+{idiom:"汹涌澎湃",clue:"形容声势浩大不可阻挡"},
+{idiom:"狗尾续貂",clue:"比喻拿不好的东西补接在好的后面"},
+{idiom:"耳聪目明",clue:"形容头脑清楚眼光敏锐"},
+{idiom:"来之不易",clue:"表示取得成功是不容易的"},
+{idiom:"易如反掌",clue:"比喻事情非常容易做"},
+{idiom:"掌上明珠",clue:"比喻受父母疼爱的儿女"},
+{idiom:"珠联璧合",clue:"比喻杰出人才或美好事物结合"},
+{idiom:"改过自新",clue:"改正错误重新做起"},
+{idiom:"古色古香",clue:"形容器物书画富有古雅色彩情调"},
+{idiom:"香草美人",clue:"象征忠君爱国的思想"},
+{idiom:"软硬兼施",clue:"软的和硬的手段都用上了"},
+{idiom:"施仁布德",clue:"实行仁义布施恩德"},
+{idiom:"德言容功",clue:"指妇女应有的四种德行"},
+{idiom:"功败垂成",clue:"事情将要成功时遭到失败"},
+{idiom:"围魏救赵",clue:"袭击敌人后方迫使进攻之敌撤退"},
+{idiom:"赵歌燕舞",clue:"泛指歌舞"},
+{idiom:"雨后送伞",clue:"比喻事后献殷勤"},
+{idiom:"损兵折将",clue:"兵士和将领都有损失，形容作战失利"},
+{idiom:"将心比心",clue:"设身处地为别人着想"},
+{idiom:"心领神会",clue:"对方没明说心里已经领会"},
+{idiom:"会心一笑",clue:"领会到对方内心意思而微笑"},
+{idiom:"笑逐颜开",clue:"满脸笑容十分高兴"},
+{idiom:"开天辟地",clue:"比喻空前的自古以来没有过的"},
+{idiom:"地老天荒",clue:"指经历的时间极久"},
+{idiom:"荒无人烟",clue:"形容地方偏僻荒凉"},
+{idiom:"烟消云散",clue:"比喻事物消失得干干净净"},
+{idiom:"散兵游勇",clue:"指没有统帅的逃散士兵"},
+{idiom:"勇冠三军",clue:"勇敢是全军第一"},
+{idiom:"军令如山",clue:"形容作战中命令的重要性"},
+{idiom:"山盟海誓",clue:"男女相爱时立下的誓言"},
+{idiom:"誓死不屈",clue:"立下誓言宁死也不屈服"},
+{idiom:"数一数二",clue:"形容突出"},
+{idiom:"三言两语",clue:"形容话很少"},
+{idiom:"语重心长",clue:"话语恳切情意深长"},
+{idiom:"长话短说",clue:"把要说的话简短说出来"},
+{idiom:"说长道短",clue:"议论别人的好坏是非"},
+{idiom:"短小精悍",clue:"形容人身躯短小精明强干"},
+{idiom:"悍然不顾",clue:"凶暴蛮横不顾一切"},
+{idiom:"顾全大局",clue:"照顾整个局面使其不受损害"},
+{idiom:"局促不安",clue:"形容拘谨不自然"},
+{idiom:"安分守己",clue:"规矩老实守本分"},
+{idiom:"己所不欲",clue:"自己不愿意的不要施加给别人"},
+{idiom:"欲罢不能",clue:"想要停止也不能停止"},
+{idiom:"能工巧匠",clue:"工艺技术高明的人"},
+{idiom:"匠心独运",clue:"独创性地运用精巧心思"},
+{idiom:"运筹帷幄",clue:"拟定作战策略，筹划指挥"},
+{idiom:"划一不二",clue:"指做事专一不改变初衷"},
+{idiom:"二话不说",clue:"形容毫不犹豫立即行动"},
+{idiom:"说三道四",clue:"不负责任地胡乱议论"},
+{idiom:"四面八方",clue:"指各个方面或各个地方"},
+{idiom:"方兴未艾",clue:"事物正在发展尚未达到止境"},
+{idiom:"艾发衰容",clue:"形容年老体衰"},
+{idiom:"容光焕发",clue:"脸上光彩四射形容精神饱满"},
+{idiom:"发蒙振聩",clue:"比喻唤醒糊涂麻木的人"},
+{idiom:"能者多劳",clue:"能干的人做事多劳累也多"},
+{idiom:"劳苦功高",clue:"出了很多力立下很大功劳"},
+{idiom:"高瞻远瞩",clue:"站得高看得远，比喻眼光远大"},
+{idiom:"舌战群儒",clue:"同很多人辩论并驳倒对方"},
+{idiom:"返老还童",clue:"由衰老恢复青春"},
+{idiom:"现身说法",clue:"以亲身经历说明某种道理"},
+{idiom:"转危为安",clue:"由危险转为平安"},
+{idiom:"安邦定国",clue:"使国家安定巩固"},
+{idiom:"国富民强",clue:"国家富足人民强健"},
+{idiom:"小心谨慎",clue:"形容言行慎重不敢疏忽"},
+{idiom:"始终如一",clue:"自始至终一个样子"},
+{idiom:"一马当先",clue:"形容领先积极带头"},
+{idiom:"先发制人",clue:"先动手制服对方获得主动"},
+{idiom:"人言可畏",clue:"背后的议论或诬蔑的话很可怕"},
+{idiom:"畏缩不前",clue:"畏惧退缩不敢前进"},
+{idiom:"前车可鉴",clue:"用前人的失败作为教训"},
+{idiom:"远走高飞",clue:"跑到很远地方去"},
+{idiom:"长吁短叹",clue:"形容发愁的神情"},
+{idiom:"叹为观止",clue:"赞美事物好到了极点"},
+{idiom:"止戈为武",clue:"不用武力使对方屈服才是真武功"},
+{idiom:"平易近人",clue:"和蔼可亲使人容易接近"},
+{idiom:"人心向背",clue:"指人民大众的拥护或反对"},
+{idiom:"背道而驰",clue:"比喻方向目的完全相反"},
+{idiom:"飞蛾赴火",clue:"比喻自取灭亡"},
+{idiom:"毛遂自荐",clue:"比喻自告奋勇自己推荐自己"},
+{idiom:"能言善辩",clue:"善于用言辞表达很会说话"},
+{idiom:"辩才无碍",clue:"指菩萨为人说法义理通达言辞流利"},
+{idiom:"碍手碍脚",clue:"妨碍别人做事"},
+{idiom:"脚踏实地",clue:"比喻做事踏实认真"},
+{idiom:"地久天长",clue:"形容历时悠久或爱情永久不变"},
+{idiom:"长治久安",clue:"国家长期安定巩固"},
+{idiom:"安如泰山",clue:"形容象泰山一样稳固"},
+{idiom:"山崩地裂",clue:"形容响声巨大或变化剧烈"},
+{idiom:"裂石穿云",clue:"形容声音高亢嘹亮"},
+{idiom:"云消雾散",clue:"比喻事物消失干干净净"},
+{idiom:"勇往直前",clue:"勇敢一直向前进"},
+{idiom:"军法从事",clue:"按军法处理"},
+{idiom:"山盟海誓",clue:"爱情要象山海一样永恒不变"},
+{idiom:"誓不两立",clue:"发誓不和敌人共存"},
+{idiom:"立身处世",clue:"指人在社会上待人接物的种种活动"},
+{idiom:"世外桃源",clue:"环境幽静生活安逸的地方"},
+{idiom:"源源不断",clue:"形容接连不断"},
+{idiom:"断章取义",clue:"孤立地取其中一段或一句的意思"},
+{idiom:"义薄云天",clue:"正义之气直上高空"},
+{idiom:"云淡风轻",clue:"微风轻拂浮云淡薄"},
+{idiom:"轻举妄动",clue:"不经慎重考虑轻率行动"},
+{idiom:"动人心弦",clue:"形容事物激动人心"},
+{idiom:"弦外之音",clue:"比喻言外之意"},
+{idiom:"音容笑貌",clue:"怀念故人的声音容貌神情"},
+{idiom:"貌美如花",clue:"如花似玉形容女子姿容出众"},
+{idiom:"花残月缺",clue:"形容衰败零落的景象"},
+{idiom:"缺一不可",clue:"少一样也不行"},
+{idiom:"可歌可泣",clue:"值得歌颂赞美使人感动流泪"},
+{idiom:"泣不成声",clue:"哭得噎住了出不来声音"},
+{idiom:"声泪俱下",clue:"边说边哭形容极其悲恸"},
+{idiom:"下笔千言",clue:"形容文思敏捷写作迅速"},
+{idiom:"言而有信",clue:"说话靠得住有信用"},
+{idiom:"信手拈来",clue:"随手拿来多指写文章选用词语纯熟"},
+{idiom:"长命百岁",clue:"常用作祝福长寿之词"},
+{idiom:"岁岁平安",clue:"每年都能平安"},
+{idiom:"安然无恙",clue:"泛指事物平安未遭损害"},
+{idiom:"事过境迁",clue:"事情已经过去情况也变了"},
+{idiom:"心直口快",clue:"性情直爽有话就说"},
+{idiom:"快人快语",clue:"爽快的人说爽快的话"},
+{idiom:"语惊四座",clue:"发言独特新奇使人震惊"},
+{idiom:"座无虚席",clue:"座位没有空着的形容人很多"},
+{idiom:"席地而坐",clue:"泛指在地上坐"},
+{idiom:"坐井观天",clue:"坐在井底看天比喻眼界小见识少"},
+{idiom:"天各一方",clue:"形容相隔极远见面困难"},
+{idiom:"能屈能伸",clue:"失意时忍耐得志时大干"},
+{idiom:"伸张正义",clue:"发扬正义"},
+{idiom:"义结金兰",clue:"交情深厚结成异姓兄弟姐妹"},
+{idiom:"兰心蕙性",clue:"比喻女子高尚纯洁幽雅贤淑"},
+{idiom:"性命交关",clue:"形容事关重大非常紧要"},
+{idiom:"关门闭户",clue:"门户都关闭形容冷落凄凉"},
+{idiom:"户枢不蠹",clue:"经常转动的门轴不会被虫蛀"},
+{idiom:"蠹国害民",clue:"危害国家和人民"},
+{idiom:"民胞物与",clue:"泛指爱人和一切物类"},
+{idiom:"与虎谋皮",clue:"比喻所商量的事跟对方利益相反绝不能成功"},
+{idiom:"皮开肉绽",clue:"被打得皮肉都裂开了形容伤势重"},
+{idiom:"绽放心花",clue:"形容非常高兴"},
+{idiom:"花前月下",clue:"多指谈情说爱的处所"},
+{idiom:"月下老人",clue:"泛指媒人"},
+{idiom:"人浮于事",clue:"人员过多或人多事少"},
+{idiom:"事倍功半",clue:"费力大收效小"},
+{idiom:"半路出家",clue:"成年后才从事某种事业"},
+{idiom:"家给人足",clue:"家家衣食充裕人人生活富足"},
+{idiom:"足不出户",clue:"脚不跨出家门"},
+{idiom:"穿针引线",clue:"比喻从中撮合联系使双方接通"},
+{idiom:"和衷共济",clue:"比喻同心协力克服困难"},
+{idiom:"济世救人",clue:"拯救世人和百姓"},
+{idiom:"人面兽心",clue:"面貌是人但心肠凶狠"},
+{idiom:"心猿意马",clue:"形容心里东想西想安静不下来"},
+{idiom:"马首是瞻",clue:"比喻服从指挥或乐意追随"},
+{idiom:"瞻前顾后",clue:"形容顾虑太多犹豫不决"},
+{idiom:"后来居上",clue:"后来的超过先前的"},
+{idiom:"上行下效",clue:"上面怎么做下面就跟着干"},
+{idiom:"效颦学步",clue:"比喻盲目模仿弄巧成拙"},
+{idiom:"升堂入室",clue:"比喻学问循序渐进达到更高水平"},
+{idiom:"室迩人远",clue:"房屋就在近处可是主人却离得远"},
+{idiom:"飞檐走壁",clue:"形容有武艺的人身体轻捷"},
+{idiom:"壁垒森严",clue:"比喻防守很严密"},
+{idiom:"严刑峻法",clue:"严厉的刑罚和严峻的法令"},
+{idiom:"法不阿贵",clue:"法律不偏袒有权有势的人"},
+{idiom:"贵耳贱目",clue:"重视传来的话轻视亲眼看到的"},
+{idiom:"目无全牛",clue:"比喻技术熟练到了得心应手的境地"},
+{idiom:"牛刀小试",clue:"有大本领先在小事情上展示"},
+{idiom:"试目以待",clue:"擦亮眼睛等着瞧"},
+{idiom:"待价而沽",clue:"等待好价钱出售比喻怀才待用"},
+{idiom:"沽名钓誉",clue:"用不正当手段捞取名誉"},
+{idiom:"下不为例",clue:"下次不可以再这样做"},
+{idiom:"例行公事",clue:"按照惯例办理多指只重形式"},
+{idiom:"事半功倍",clue:"费力小收效大"},
+{idiom:"进退两难",clue:"前进后退都难比喻无法决定"},
+{idiom:"难兄难弟",clue:"兄弟才德相当难分高下"},
+{idiom:"代代相传",clue:"一代接一代地传下去"},
+{idiom:"传为美谈",clue:"被人们广泛称赞和传颂"},
+{idiom:"谈虎色变",clue:"一提到害怕的事就紧张起来"},
+{idiom:"变幻莫测",clue:"变化很多不能预料"},
+{idiom:"心照不宣",clue:"彼此心里明白而不公开说出来"},
+{idiom:"流连忘返",clue:"玩乐时留恋不愿离开"},
+{idiom:"返璞归真",clue:"去掉外饰还其本质"},
+{idiom:"真才实学",clue:"真正的才能和学识"},
+{idiom:"学以致用",clue:"为了实际应用而学习"},
+{idiom:"用人不疑",clue:"任用一个人就不要怀疑"},
+{idiom:"疑神疑鬼",clue:"形容非常多疑"},
+{idiom:"事必躬亲",clue:"凡事一定亲自去做"},
+{idiom:"足食足兵",clue:"粮食充足武备修整"},
+{idiom:"兵临城下",clue:"敌军已来到城墙下面比喻情势危急"},
+{idiom:"例直禁简",clue:"法律简单明了人民容易遵守"},
+{idiom:"简明扼要",clue:"简单明了能抓住要点"},
+{idiom:"要言不烦",clue:"简单扼要不烦琐"},
+{idiom:"礼尚往来",clue:"礼节上应该有来有往"},
+{idiom:"来去分明",clue:"形容手续清楚"},
+{idiom:"明镜高悬",clue:"比喻官员判案公正廉明"},
+{idiom:"悬梁刺股",clue:"形容刻苦学习"},
+{idiom:"上下其手",clue:"比喻玩弄手法暗中作弊"},
+{idiom:"来者不拒",clue:"对于有所求而来的人概不拒绝"},
+{idiom:"拒人千里",clue:"形容对人态度傲慢"},
+{idiom:"国色天香",clue:"原形容牡丹花后形容女子美丽"},
+{idiom:"闻鸡起舞",clue:"比喻有志报国的人及时奋起"},
+{idiom:"龙蛇混杂",clue:"比喻好人和坏人混在一起"},
+{idiom:"八面威风",clue:"形容威风凛凛神气十足"},
+{idiom:"威风凛凛",clue:"形容声势或气派使人敬畏"},
+{idiom:"漫天要价",clue:"无限度地乱要价"},
+{idiom:"价廉物美",clue:"价钱便宜质量又好"},
+{idiom:"美不胜收",clue:"美好的东西很多一时看不过来"},
+{idiom:"如胶似漆",clue:"形容感情炽烈难舍难分"},
+{idiom:"疾风劲草",clue:"比喻经过严峻考验才知道谁坚强"},
+{idiom:"草木皆兵",clue:"形容人在惊慌时疑神疑鬼"},
+{idiom:"兵贵神速",clue:"用兵以行动特别迅速为贵"},
+{idiom:"速战速决",clue:"用迅速办法完成任务"},
+{idiom:"决胜千里",clue:"形容将帅雄才大略指挥若定"},
+{idiom:"山呼海啸",clue:"形容声势浩大"},
+{idiom:"啸聚山林",clue:"指反抗统治聚众起事"},
+{idiom:"林林总总",clue:"形容众多"},
+{idiom:"言听计从",clue:"说的话出的主意都听从照办"},
+{idiom:"从善如流",clue:"能迅速接受别人好意见"},
+{idiom:"流水桃花",clue:"形容春日美景也比喻男女爱情"},
+{idiom:"地角天涯",clue:"比喻偏远地方或相隔很远"},
+{idiom:"长生久视",clue:"形容长寿"},
+{idiom:"视如珍宝",clue:"形容十分珍爱"},
+{idiom:"宝山空回",clue:"本来应该有丰富收获却一无所得"},
+{idiom:"回心转意",clue:"改变态度不再坚持成见"},
+{idiom:"厉兵秣马",clue:"磨好兵器喂好马形容准备战斗"},
+{idiom:"昂首阔步",clue:"形容精神振奋意气昂扬"},
+{idiom:"步步登高",clue:"比喻官职升得快或事业不断上升"},
+{idiom:"高枕无忧",clue:"比喻思想麻痹丧失警惕"},
+{idiom:"忧国忧民",clue:"为国家前途和人民命运担忧"},
+{idiom:"藏锋敛锷",clue:"比喻人低调不显露锋芒"},
+{idiom:"露胆披肝",clue:"比喻待人坦诚无所忌讳"},
+{idiom:"肝胆相照",clue:"比喻真心诚意互相坦诚"},
+{idiom:"照猫画虎",clue:"比喻照着样子模仿"},
+{idiom:"虎落平阳",clue:"比喻失势"},
+{idiom:"道听途说",clue:"泛指没有根据的传闻"},
+{idiom:"二分明月",clue:"形容美好的夜色"},
+{idiom:"瓜田李下",clue:"比喻容易引起嫌疑的场合"},
+{idiom:"谈笑自如",clue:"和平常一样有说有笑"},
+{idiom:"如出一辙",clue:"比喻两件事非常相似"},
+{idiom:"靡靡之音",clue:"指萎靡颓废低级趣味的乐曲"},
+{idiom:"比肩继踵",clue:"形容人很多很拥挤"},
+{idiom:"风吹草动",clue:"比喻微小的变动"},
+{idiom:"安常处顺",clue:"习惯于平稳日子处于顺利境遇"},
+{idiom:"白驹过隙",clue:"形容时间过得极快"},
+{idiom:"坏人心术",clue:"使人意志消沉萎靡不振"},
+{idiom:"攻守同盟",clue:"联合进攻或防卫的协定"},
+{idiom:"海誓山盟",clue:"爱情要象山和海一样永恒不变"},
+{idiom:"欲罢不能",clue:"想要停止也不能停止"},
+{idiom:"纵横四海",clue:"在天下任意往来没有阻碍"},
+{idiom:"空谷幽兰",clue:"形容十分难得常比喻人品高雅"},
+{idiom:"关门大吉",clue:"指商店倒闭或企业破产"},
+{idiom:"照本宣科",clue:"死板地按照课文讲稿"},
+{idiom:"上下其手",clue:"比喻玩弄手法暗中作弊"},
+{idiom:"手到病除",clue:"形容医术高明或工作做得好"},
+{idiom:"失魂落魄",clue:"形容心神不定行动失常"},
+{idiom:"飞灾横祸",clue:"意外的灾祸"},
+{idiom:"欢天喜地",clue:"形容非常高兴"},
+{idiom:"和颜悦色",clue:"脸色和蔼喜悦形容和善可亲"},
+{idiom:"天衣无缝",clue:"比喻事物周密完善找不出毛病"},
+];
+
+function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
+
+function canPlace(grid, word, row, col, dir) {
+    const chars = [...word];
+    let hasCrossing = false;
+    for (let i = 0; i < chars.length; i++) {
+        const r = dir === 'h' ? row : row + i;
+        const c = dir === 'h' ? col + i : col;
+        if (r < 0 || r >= GRID || c < 0 || c >= GRID) return false;
+        if (grid[r][c] && grid[r][c] !== '') {
+            if (grid[r][c] !== chars[i]) return false;
+            hasCrossing = true;
+        }
+    }
+    if (!hasCrossing) return false;
+    
+    for (let i = 0; i < chars.length; i++) {
+        const r = dir === 'h' ? row : row + i;
+        const c = dir === 'h' ? col + i : col;
+        const isCrossing = grid[r][c] === chars[i];
+        if (dir === 'h') {
+            if (!isCrossing && r > 0 && grid[r-1][c]) return false;
+            if (!isCrossing && r < GRID-1 && grid[r+1][c]) return false;
+            if (i === 0 && c > 0 && grid[r][c-1]) return false;
+            if (i === chars.length-1 && c < GRID-1 && grid[r][c+1]) return false;
+        } else {
+            if (!isCrossing && c > 0 && grid[r][c-1]) return false;
+            if (!isCrossing && c < GRID-1 && grid[r][c+1]) return false;
+            if (i === 0 && r > 0 && grid[r-1][c]) return false;
+            if (i === chars.length-1 && r < GRID-1 && grid[r+1][c]) return false;
+        }
+    }
+    return true;
+}
+
+function placeWord(grid, word, row, col, dir) {
+    const chars = [...word];
+    for (let i = 0; i < chars.length; i++) {
+        const r = dir === 'h' ? row : row + i;
+        const c = dir === 'h' ? col + i : col;
+        grid[r][c] = chars[i];
+    }
+}
+
+function generateCrossword() {
+    let bestResult = null;
+    let bestScore = 0;
+
+    for (let attempt = 0; attempt < 15; attempt++) {
+        const grid = Array.from({length: GRID}, () => Array(GRID).fill(''));
+        const placed = [];
+        const shuffled = shuffle([...DB]);
+
+        // Place first word in center
+        const first = shuffled[0];
+        const firstRow = Math.floor(GRID / 2);
+        const firstCol = Math.floor((GRID - first.idiom.length) / 2);
+        placeWord(grid, first.idiom, firstRow, firstCol, 'h');
+        placed.push({word: first.idiom, clue: first.clue, dir: 'h', row: firstRow, col: firstCol});
+
+        // Try to place more words
+        let maxIter = 200;
+        for (let wi = 1; wi < shuffled.length && maxIter-- > 0; wi++) {
+            const item = shuffled[wi];
+            const w = item.idiom;
+            let placed_new = false;
+
+            // Try to find a crossing point with existing words
+            const existingCells = [];
+            for (let r = 0; r < GRID; r++) {
+                for (let c = 0; c < GRID; c++) {
+                    if (grid[r][c]) existingCells.push({r, c, ch: grid[r][c]});
+                }
+            }
+
+            // For each char in the new word, try to cross with existing cells
+            const charPositions = {};
+            for (let i = 0; i < w.length; i++) {
+                if (!charPositions[w[i]]) charPositions[w[i]] = [];
+                charPositions[w[i]].push(i);
+            }
+
+            for (const {r, c, ch} of existingCells) {
+                if (charPositions[ch]) {
+                    for (const charIdx of charPositions[ch]) {
+                        // Try both directions
+                        for (const dir of ['h', 'v']) {
+                            const startR = dir === 'h' ? r : r - charIdx;
+                            const startC = dir === 'h' ? c - charIdx : c;
+
+                            // Check if this word is already placed at this position/direction
+                            const alreadyPlaced = placed.some(p =>
+                                p.word === w && p.dir === dir && p.row === startR && p.col === startC
+                            );
+                            if (alreadyPlaced) continue;
+
+                            if (canPlace(grid, w, startR, startC, dir)) {
+                                // Also check perpendicular adjacency is OK
+                                let ok = true;
+                                for (let i = 0; i < w.length; i++) {
+                                    const cr = dir === 'h' ? startR : startR + i;
+                                    const cc = dir === 'h' ? startC + i : startC;
+                                    // Check that perpendicular cells at non-crossing points are empty
+                                    if (grid[cr][cc] && grid[cr][cc] !== w[i] && !(cr === r && cc === c)) {
+                                        ok = false; break;
+                                    }
+                                }
+                                if (ok) {
+                                    placeWord(grid, w, startR, startC, dir);
+                                    placed.push({word: w, clue: item.clue, dir, row: startR, col: startC});
+                                    placed_new = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (placed_new) break;
+                    }
+                }
+                if (placed_new) break;
+            }
+        }
+
+        if (placed.length > bestScore) {
+            bestScore = placed.length;
+            bestResult = {grid, placed};
+        }
+    }
+
+    return bestResult;
+}
+
+function buildGridData(result) {
+    const {grid, placed} = result;
+    const data = Array.from({length: GRID}, () => Array(GRID).fill(null));
+    let clueNum = 1;
+    const usedNumbers = {};
+
+    // Sort placed words by position for consistent numbering
+    placed.sort((a, b) => a.row !== b.row ? a.row - b.row : a.col - b.col);
+
+    for (const p of placed) {
+        // Check if this start cell already has a number
+        const key = `${p.row}-${p.col}`;
+        let num;
+        if (usedNumbers[key]) {
+            num = usedNumbers[key];
+        } else {
+            num = clueNum++;
+            usedNumbers[key] = num;
+        }
+
+        for (let i = 0; i < p.word.length; i++) {
+            const r = p.dir === 'h' ? p.row : p.row + i;
+            const c = p.dir === 'h' ? p.col + i : p.col;
+            if (!data[r][c]) {
+                data[r][c] = {char: p.word[i], num: null};
+            }
+            if (i === 0) {
+                data[r][c].num = num;
+            }
+        }
+    }
+    return {data, placed};
+}
+
+function render(gameData) {
+    const {data, placed} = gameData;
+    words = placed;
+
+    // Calculate bounds
+    let minR = GRID, maxR = 0, minC = GRID, maxC = 0;
+    for (let r = 0; r < GRID; r++) {
+        for (let c = 0; c < GRID; c++) {
+            if (data[r][c]) {
+                minR = Math.min(minR, r); maxR = Math.max(maxR, r);
+                minC = Math.min(minC, c); maxC = Math.max(maxC, c);
+            }
+        }
+    }
+
+    const rows = maxR - minR + 1;
+    const cols = maxC - minC + 1;
+
+    // Responsive cell size
+    const containerW = document.querySelector('.container').clientWidth - 60;
+    cellPx = Math.min(48, Math.floor((containerW - cols * 2) / cols));
+    cellPx = Math.max(30, cellPx);
+
+    const board = document.getElementById('gameBoard');
+    board.style.gridTemplateColumns = `repeat(${cols}, ${cellPx}px)`;
+    board.style.gridTemplateRows = `repeat(${rows}, ${cellPx}px)`;
+    board.innerHTML = '';
+
+    for (let r = minR; r <= maxR; r++) {
+        for (let c = minC; c <= maxC; c++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            cell.dataset.row = r;
+            cell.dataset.col = c;
+
+            if (!data[r][c]) {
+                cell.classList.add('cell-empty');
+            } else {
+                cell.classList.add('cell-input');
+                if (data[r][c].num) {
+                    const numSpan = document.createElement('span');
+                    numSpan.className = 'number';
+                    numSpan.textContent = data[r][c].num;
+                    cell.appendChild(numSpan);
+                }
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.maxLength = 1;
+                input.dataset.answer = data[r][c].char;
+                input.dataset.row = r;
+                input.dataset.col = c;
+                input.style.fontSize = (cellPx * 0.45) + 'px';
+                input.addEventListener('input', onInput);
+                input.addEventListener('keydown', onKeyDown);
+                input.addEventListener('focus', onFocus);
+                input.addEventListener('click', onClick);
+                cell.appendChild(input);
+            }
+            board.appendChild(cell);
+        }
+    }
+
+    // Render clues
+    const container = document.getElementById('cluesContainer');
+    container.innerHTML = '';
+    const sorted = [...placed].sort((a, b) => {
+        const aKey = `${a.row}-${a.col}`;
+        const bKey = `${b.row}-${b.col}`;
+        const aNum = getClueNum(a.row, a.col, a.dir);
+        const bNum = getClueNum(b.row, b.col, b.dir);
+        return aNum - bNum;
+    });
+
+    const clueNums = {};
+    for (const p of sorted) {
+        const num = getClueNum(p.row, p.col, p.dir);
+        const key = `${num}-${p.dir}`;
+        if (clueNums[key]) continue;
+        clueNums[key] = true;
+
+        const div = document.createElement('div');
+        div.className = 'clue-item';
+        div.innerHTML = `<span class="dir">${p.dir === 'h' ? '横' : '竖'}</span><span class="num">${num}.</span><span>${p.clue}</span>`;
+        div.addEventListener('click', () => highlightClue(p));
+        container.appendChild(div);
+    }
+
+    // Stats
+    let totalChars = 0;
+    for (let r = 0; r < GRID; r++) {
+        for (let c = 0; c < GRID; c++) {
+            if (data[r][c]) totalChars++;
+        }
+    }
+    document.getElementById('stats').textContent = `共 ${placed.length} 个成语，${totalChars} 个汉字`;
+    document.getElementById('message').className = 'message';
+    document.getElementById('message').textContent = '';
+}
+
+function getClueNum(row, col, dir) {
+    const el = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"] .number`);
+    return el ? parseInt(el.textContent) : 0;
+}
+
+function highlightClue(p) {
+    document.querySelectorAll('.cell-input').forEach(c => c.classList.remove('active', 'cell-highlight'));
+    for (let i = 0; i < p.word.length; i++) {
+        const r = p.dir === 'h' ? p.row : p.row + i;
+        const c = p.dir === 'h' ? p.col + i : p.col;
+        const cell = document.querySelector(`.cell[data-row="${r}"][data-col="${c}"]`);
+        if (cell) cell.classList.add('cell-highlight');
+    }
+    // Focus first input
+    const firstInput = document.querySelector(`.cell[data-row="${p.row}"][data-col="${p.col}"] input`);
+    if (firstInput) firstInput.focus();
+}
+
+function onInput(e) {
+    const val = e.target.value;
+    if (val.length === 1) {
+        e.target.value = val;
+        moveToNext(e.target);
+    }
+}
+
+function moveToNext(input) {
+    const row = parseInt(input.dataset.row);
+    const col = parseInt(input.dataset.col);
+    // Find the word this cell belongs to and move in that direction
+    const cell = input.closest('.cell');
+    // Try right, then down
+    if (focusCell(row, col + 1)) return;
+    if (focusCell(row + 1, col)) return;
+}
+
+function onKeyDown(e) {
+    const row = parseInt(e.target.dataset.row);
+    const col = parseInt(e.target.dataset.col);
+    switch(e.key) {
+        case 'ArrowRight': e.preventDefault(); focusCell(row, col+1); break;
+        case 'ArrowLeft': e.preventDefault(); focusCell(row, col-1); break;
+        case 'ArrowDown': e.preventDefault(); focusCell(row+1, col); break;
+        case 'ArrowUp': e.preventDefault(); focusCell(row-1, col); break;
+        case 'Backspace':
+            if (!e.target.value) {
+                e.preventDefault();
+                focusCell(row, col-1) || focusCell(row-1, col);
+            }
+            break;
+    }
+}
+
+function showCurrentClue(row, col) {
+    const clueEl = document.getElementById('currentClue');
+    const foundWords = [];
+    
+    for (const p of words) {
+        for (let i = 0; i < p.word.length; i++) {
+            const r = p.dir === 'h' ? p.row : p.row + i;
+            const c = p.dir === 'h' ? p.col + i : p.col;
+            if (r === row && c === col) {
+                foundWords.push(p);
+                break;
+            }
+        }
+    }
+    
+    if (foundWords.length === 0) {
+        clueEl.innerHTML = `<span style="color:#aaa;"> 点击格子查看提示</span>`;
+        return;
+    }
+    
+    const num = getClueNum(foundWords[0].row, foundWords[0].col, foundWords[0].dir);
+    if (foundWords.length === 1) {
+        const p = foundWords[0];
+        const dirLabel = p.dir === 'h' ? '横' : '竖';
+        clueEl.innerHTML = `<span style="color:#667eea;font-weight:bold;">${num} ${dirLabel}</span> &nbsp;${p.clue}`;
+    } else {
+        // Cell belongs to two words (crossing point)
+        const p1 = foundWords[0];
+        const p2 = foundWords[1];
+        const num1 = getClueNum(p1.row, p1.col, p1.dir);
+        const num2 = getClueNum(p2.row, p2.col, p2.dir);
+        clueEl.innerHTML = `<span style="color:#667eea;font-weight:bold;">${num1} ${p1.dir==='h'?'横':'竖'}</span> &nbsp;${p1.clue}<br><span style="color:#667eea;font-weight:bold;">${num2} ${p2.dir==='h'?'横':'竖'}</span> &nbsp;${p2.clue}`;
+    }
+}
+
+function onFocus(e) {
+    document.querySelectorAll('.cell-input').forEach(c => c.classList.remove('active'));
+    e.target.closest('.cell').classList.add('active');
+    const row = parseInt(e.target.dataset.row);
+    const col = parseInt(e.target.dataset.col);
+    showCurrentClue(row, col);
+}
+
+function onClick(e) {
+    const cell = e.target.closest('.cell');
+    document.querySelectorAll('.cell-input').forEach(c => c.classList.remove('active'));
+    cell.classList.add('active');
+    const row = parseInt(cell.dataset.row);
+    const col = parseInt(cell.dataset.col);
+    showCurrentClue(row, col);
+}
+
+function focusCell(row, col) {
+    const input = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"] input`);
+    if (input) { input.focus(); return true; }
+    return false;
+}
+
+function checkAnswers() {
+    const inputs = document.querySelectorAll('.cell-input input');
+    let correct = true;
+    let filled = 0;
+    let total = inputs.length;
+
+    inputs.forEach(input => {
+        if (input.value.trim()) filled++;
+        if (input.value.trim().toUpperCase() === input.dataset.answer) {
+            input.closest('.cell').classList.add('cell-correct');
+            input.closest('.cell').classList.remove('cell-wrong');
+        } else {
+            input.closest('.cell').classList.add('cell-wrong');
+            input.closest('.cell').classList.remove('cell-correct');
+            correct = false;
+        }
+    });
+
+    const msg = document.getElementById('message');
+    if (filled < total) {
+        msg.className = 'message info';
+        msg.textContent = `还有空格未填写（${filled}/${total}）`;
+    } else if (correct) {
+        msg.className = 'message success';
+        msg.textContent = '🎉 恭喜你，全部正确！太棒了！';
+    } else {
+        msg.className = 'message error';
+        msg.textContent = '有些答案不对，请检查红色标记的字';
+    }
+}
+
+function resetGame() {
+    document.querySelectorAll('.cell-input input').forEach(input => { input.value = ''; });
+    document.querySelectorAll('.cell-input').forEach(c => { c.classList.remove('cell-correct', 'cell-wrong', 'cell-highlight'); });
+    document.getElementById('message').className = 'message';
+}
+
+function generateNewGame() {
+    const result = generateCrossword();
+    if (!result || result.placed.length < 3) {
+        generateNewGame();
+        return;
+    }
+    const gameData = buildGridData(result);
+    render(gameData);
+}
+
+function giveHint() {
+    const activeCell = document.querySelector('.cell-input.active');
+    if (!activeCell) {
+        const msg = document.getElementById('message');
+        msg.className = 'message info';
+        msg.textContent = '请先点击一个格子，再点击提示按钮';
+        return;
+    }
+    const row = parseInt(activeCell.dataset.row);
+    const col = parseInt(activeCell.dataset.col);
+    const input = activeCell.querySelector('input');
+    if (input && input.value.trim()) {
+        const msg = document.getElementById('message');
+        msg.className = 'message info';
+        msg.textContent = '该格子已填写，请选择空格子再提示';
+        setTimeout(() => { msg.className = 'message'; }, 2000);
+        return;
+    }
+
+    // Find which word(s) this cell belongs to
+    let targetWord = null;
+    for (const p of words) {
+        for (let i = 0; i < p.word.length; i++) {
+            const r = p.dir === 'h' ? p.row : p.row + i;
+            const c = p.dir === 'h' ? p.col + i : p.col;
+            if (r === row && c === col) {
+                targetWord = p;
+                break;
+            }
+        }
+        if (targetWord) break;
+    }
+
+    if (!targetWord) {
+        const msg = document.getElementById('message');
+        msg.className = 'message error';
+        msg.textContent = '无法找到对应的成语';
+        return;
+    }
+
+    // Fill the entire word
+    let filledCount = 0;
+    for (let i = 0; i < targetWord.word.length; i++) {
+        const r = targetWord.dir === 'h' ? targetWord.row : targetWord.row + i;
+        const c = targetWord.dir === 'h' ? targetWord.col + i : targetWord.col;
+        const cell = document.querySelector(`.cell[data-row="${r}"][data-col="${c}"]`);
+        if (cell) {
+            const inp = cell.querySelector('input');
+            if (inp && !inp.value.trim()) {
+                inp.value = targetWord.word[i];
+                filledCount++;
+                cell.classList.add('cell-highlight');
+                setTimeout(() => cell.classList.remove('cell-highlight'), 1500);
+            }
+        }
+    }
+
+    const msg = document.getElementById('message');
+    msg.className = 'message success';
+    msg.textContent = `💡 已提示成语：${targetWord.word}（${filledCount} 个空格已填充）`;
+    setTimeout(() => { msg.className = 'message'; }, 3000);
+}
+
+// Initialize
+generateNewGame();
+
+window.addEventListener('load', async () => {
+    if('serviceWorker' in navigator) {
+        try{
+            const registration = await navigator.serviceWorker.register('sw.js')
+        }catch(err){
+            console.log(err)
+        }
+    }else{
+        console.log('浏览器不支持service worker注册失败')
+    }
+    if(!navigator.onLine){
+        alert('本页面采用PWA技术，没有网络也能使用') 
+        new Notification('提示', {body: '本页面采用PWA技术，没有网络也能使用'});
+    }
+    window.addEventListener('online', ()=>{
+        alert('网络已连接') 
+        new Notification('提示', {body: '网络已连接'});
+    })
+});
+
+</script>
+</body>
+</html>
