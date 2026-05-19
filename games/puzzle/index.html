@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>拼图游戏</title>
+    <link rel="manifest" href="manifest.json"/>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        h1 {
+            color: white;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .upload-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        select, button {
+            padding: 10px 15px;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .game-container {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .puzzle-board {
+            background: white;
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-width: 100%;
+            overflow: hidden;
+        }
+
+        .puzzle-board h2 {
+            text-align: center;
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 18px;
+        }
+
+        #puzzleGrid {
+            display: grid;
+            gap: 2px;
+            background: #ddd;
+            padding: 2px;
+            border-radius: 8px;
+            max-width: 100%;
+            margin: 0 auto;
+        }
+
+        .puzzle-piece {
+            background-size: cover;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border-radius: 4px;
+        }
+
+        .puzzle-piece:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+
+        .puzzle-piece.selected {
+            box-shadow: 0 0 0 3px #667eea, 0 5px 15px rgba(0,0,0,0.3);
+            transform: scale(1.05);
+            z-index: 10;
+        }
+
+        .puzzle-piece.correct {
+            border: 2px solid #4CAF50;
+        }
+
+        .preview-container {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+
+        .preview-container h2 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        #previewImage {
+            max-width: 300px;
+            max-height: 300px;
+            border-radius: 8px;
+        }
+
+        .stats {
+            background: white;
+            padding: 15px 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-top: 20px;
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-item .label {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .stat-item .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            text-align: center;
+            z-index: 1000;
+            display: none;
+        }
+
+        .message.show {
+            display: block;
+            animation: popup 0.5s ease;
+        }
+
+        @keyframes popup {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.5);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+
+        .message h2 {
+            color: #4CAF50;
+            margin-bottom: 15px;
+        }
+
+        .message p {
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .placeholder {
+            width: 300px;
+            height: 300px;
+            max-width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f5f5f5;
+            border-radius: 8px;
+            color: #999;
+            font-size: 18px;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            h1 {
+                font-size: 24px;
+                margin-bottom: 15px;
+            }
+
+            .controls {
+                padding: 15px;
+                gap: 10px;
+            }
+
+            .upload-btn {
+                padding: 10px 20px;
+                font-size: 14px;
+            }
+
+            select, button {
+                padding: 8px 12px;
+                font-size: 13px;
+            }
+
+            .puzzle-board {
+                padding: 10px;
+            }
+
+            .puzzle-board h2 {
+                font-size: 16px;
+                margin-bottom: 10px;
+            }
+
+            .game-container {
+                gap: 15px;
+            }
+
+            .preview-container {
+                padding: 15px;
+            }
+
+            #previewImage {
+                max-width: 250px;
+                max-height: 250px;
+            }
+
+            .stats {
+                padding: 10px 20px;
+                gap: 20px;
+            }
+
+            .stat-item .label {
+                font-size: 11px;
+            }
+
+            .stat-item .value {
+                font-size: 20px;
+            }
+
+            .message {
+                padding: 30px;
+                margin: 20px;
+            }
+
+            .message h2 {
+                font-size: 24px;
+            }
+        }
+
+        #canvas {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>拼图游戏</h1>
+    
+    <div class="controls">
+        <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+            上传图片
+        </button>
+        <input type="file" id="fileInput" accept="image/*">
+        
+        <label>难度:</label>
+        <select id="difficulty">
+            <option value="3">简单 (3x3)</option>
+            <option value="4" selected>中等 (4x4)</option>
+            <option value="5">困难 (5x5)</option>
+            <option value="6">专家 (6x6)</option>
+        </select>
+        
+        <button id="shuffleBtn" disabled onclick="shufflePuzzle()">重新开始</button>
+        <button id="previewToggle" disabled onclick="togglePreview()">显示原图</button>
+    </div>
+
+    <div class="game-container">
+        <div class="puzzle-board">
+            <h2>拼图区域</h2>
+            <div id="puzzleGrid">
+                <div class="placeholder">请先上传一张图片</div>
+            </div>
+        </div>
+        
+        <div class="preview-container" id="previewContainer" style="display: none;">
+            <h2>原图预览</h2>
+            <img id="previewImage" src="" alt="原图预览">
+        </div>
+    </div>
+
+    <div class="stats" id="statsContainer" style="display: none;">
+        <div class="stat-item">
+            <div class="label">移动次数</div>
+            <div class="value" id="moves">0</div>
+        </div>
+        <div class="stat-item">
+            <div class="label">用时</div>
+            <div class="value" id="timer">00:00</div>
+        </div>
+        <div class="stat-item">
+            <div class="label">完成度</div>
+            <div class="value" id="progress">0%</div>
+        </div>
+    </div>
+
+    <div class="message" id="successMessage">
+        <h2>恭喜!</h2>
+        <p>你成功完成了拼图!</p>
+        <p>移动次数: <span id="finalMoves"></span></p>
+        <p>用时: <span id="finalTime"></span></p>
+        <button onclick="closeMessage()">再来一局</button>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <script>
+        let image = null;
+        let gridSize = 4;
+        let pieces = [];
+        let selectedPiece = null;
+        let moves = 0;
+        let timerInterval = null;
+        let seconds = 0;
+        let gameStarted = false;
+        let showPreview = false;
+        let pieceSize = 100;
+
+        const fileInput = document.getElementById('fileInput');
+        const puzzleGrid = document.getElementById('puzzleGrid');
+        const difficultySelect = document.getElementById('difficulty');
+        const shuffleBtn = document.getElementById('shuffleBtn');
+        const previewToggle = document.getElementById('previewToggle');
+        const previewContainer = document.getElementById('previewContainer');
+        const previewImage = document.getElementById('previewImage');
+        const statsContainer = document.getElementById('statsContainer');
+        const canvas = document.getElementById('canvas');
+
+        fileInput.addEventListener('change', handleImageUpload);
+        difficultySelect.addEventListener('change', () => {
+            if (image) {
+                gridSize = parseInt(difficultySelect.value);
+                initPuzzle();
+            }
+        });
+
+        function handleImageUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    image = img;
+                    previewImage.src = event.target.result;
+                    gridSize = parseInt(difficultySelect.value);
+                    initPuzzle();
+                    shuffleBtn.disabled = false;
+                    previewToggle.disabled = false;
+                    statsContainer.style.display = 'flex';
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function initPuzzle() {
+            resetGame();
+            const size = gridSize;
+            const totalPieces = size * size;
+            
+            pieces = Array.from({length: totalPieces}, (_, i) => i);
+            
+            const boardWidth = Math.min(window.innerWidth - 60, 400);
+            pieceSize = Math.floor((boardWidth - (size - 1) * 2 - 4) / size);
+            
+            puzzleGrid.style.gridTemplateColumns = `repeat(${size}, ${pieceSize}px)`;
+            puzzleGrid.style.gridTemplateRows = `repeat(${size}, ${pieceSize}px)`;
+            
+            renderPuzzle();
+            shufflePuzzle();
+        }
+
+        function renderPuzzle() {
+            puzzleGrid.innerHTML = '';
+            
+            pieces.forEach((pieceIndex, currentIndex) => {
+                const piece = document.createElement('div');
+                piece.className = 'puzzle-piece';
+                piece.dataset.currentIndex = currentIndex;
+                piece.dataset.pieceIndex = pieceIndex;
+                
+                if (image) {
+                    const correctRow = Math.floor(pieceIndex / gridSize);
+                    const correctCol = pieceIndex % gridSize;
+                    
+                    const canvasPiece = document.createElement('canvas');
+                    canvasPiece.width = pieceSize;
+                    canvasPiece.height = pieceSize;
+                    const ctx = canvasPiece.getContext('2d');
+                    
+                    const pieceWidth = image.width / gridSize;
+                    const pieceHeight = image.height / gridSize;
+                    
+                    const sourceX = correctCol * pieceWidth;
+                    const sourceY = correctRow * pieceHeight;
+                    
+                    ctx.drawImage(
+                        image,
+                        sourceX, sourceY, pieceWidth, pieceHeight,
+                        0, 0, pieceSize, pieceSize
+                    );
+                    
+                    piece.style.backgroundImage = `url(${canvasPiece.toDataURL()})`;
+                }
+                
+                piece.addEventListener('click', () => handlePieceClick(currentIndex));
+                puzzleGrid.appendChild(piece);
+            });
+            
+            updateProgress();
+        }
+
+        function shufflePuzzle() {
+            resetGame();
+            
+            for (let i = pieces.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [pieces[i], pieces[j]] = [pieces[j], pieces[i]];
+            }
+            
+            if (pieces.every((piece, index) => piece === index)) {
+                shufflePuzzle();
+                return;
+            }
+            
+            renderPuzzle();
+        }
+
+        function handlePieceClick(index) {
+            if (!gameStarted && moves === 0) {
+                startTimer();
+                gameStarted = true;
+            }
+
+            const pieces_elements = puzzleGrid.querySelectorAll('.puzzle-piece');
+            
+            if (selectedPiece === null) {
+                selectedPiece = index;
+                pieces_elements[index].classList.add('selected');
+            } else if (selectedPiece === index) {
+                pieces_elements[index].classList.remove('selected');
+                selectedPiece = null;
+            } else {
+                const temp = pieces[selectedPiece];
+                pieces[selectedPiece] = pieces[index];
+                pieces[index] = temp;
+                
+                pieces_elements.forEach(p => p.classList.remove('selected'));
+                selectedPiece = null;
+                
+                moves++;
+                document.getElementById('moves').textContent = moves;
+                
+                renderPuzzle();
+                checkWin();
+            }
+        }
+
+        function checkWin() {
+            const isWin = pieces.every((piece, index) => piece === index);
+            if (isWin) {
+                stopTimer();
+                document.getElementById('finalMoves').textContent = moves;
+                document.getElementById('finalTime').textContent = formatTime(seconds);
+                document.getElementById('successMessage').classList.add('show');
+                
+                document.querySelectorAll('.puzzle-piece').forEach(piece => {
+                    piece.classList.add('correct');
+                });
+            }
+        }
+
+        function updateProgress() {
+            const correctCount = pieces.filter((piece, index) => piece === index).length;
+            const progress = Math.round((correctCount / pieces.length) * 100);
+            document.getElementById('progress').textContent = progress + '%';
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                seconds++;
+                document.getElementById('timer').textContent = formatTime(seconds);
+            }, 1000);
+        }
+
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }
+
+        function formatTime(s) {
+            const minutes = Math.floor(s / 60);
+            const secs = s % 60;
+            return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }
+
+        function resetGame() {
+            stopTimer();
+            moves = 0;
+            seconds = 0;
+            gameStarted = false;
+            selectedPiece = null;
+            document.getElementById('moves').textContent = '0';
+            document.getElementById('timer').textContent = '00:00';
+            document.getElementById('progress').textContent = '0%';
+        }
+
+        function togglePreview() {
+            showPreview = !showPreview;
+            previewContainer.style.display = showPreview ? 'block' : 'none';
+            previewToggle.textContent = showPreview ? '隐藏原图' : '显示原图';
+        }
+
+        function closeMessage() {
+            document.getElementById('successMessage').classList.remove('show');
+            shufflePuzzle();
+        }
+
+        window.addEventListener('load', async () => {
+            if('serviceWorker' in navigator) {
+                try{
+                    const registration = await navigator.serviceWorker.register('sw.js')
+                }catch(err){
+                    console.log(err)
+                }
+            }else{
+                console.log('浏览器不支持service worker注册失败')
+            }
+            if(!navigator.onLine){
+                alert('本页面采用PWA技术，没有网络也能使用') 
+                new Notification('提示', {body: '本页面采用PWA技术，没有网络也能使用'});
+            }
+            window.addEventListener('online', ()=>{
+                alert('网络已连接') 
+                new Notification('提示', {body: '网络已连接'});
+            })
+        });
+
+
+    </script>
+</body>
+</html>
