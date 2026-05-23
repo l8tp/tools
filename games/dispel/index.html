@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>emoji消除</title>
+    <link rel="manifest" href="manifest.json"/>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+            padding: 10px;
+            touch-action: manipulation;
+        }
+
+        h1 {
+            color: white;
+            margin: 10px 0;
+            font-size: 1.8rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .game-info {
+            color: white;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+            display: flex;
+            gap: 20px;
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 400px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .game-board {
+            position: relative;
+            width: 330px;
+            height: 300px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+
+        .card {
+            position: absolute;
+            width: 55px;
+            height: 55px;
+            background: linear-gradient(145deg, #ffffff, #f5f5f5);
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.8rem;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            user-select: none;
+            border: 3px solid #fff;
+        }
+
+        .card.layer-0 {
+            box-shadow: 0 3px 6px rgba(0,0,0,0.15), 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .card.layer-1 {
+            box-shadow: 0 6px 12px rgba(0,0,0,0.25), 0 2px 4px rgba(0,0,0,0.15);
+            border-color: #e0e0e0;
+            background: linear-gradient(145deg, #fafafa, #f0f0f0);
+        }
+
+        .card.layer-2 {
+            box-shadow: 0 8px 16px rgba(0,0,0,0.3), 0 3px 6px rgba(0,0,0,0.2);
+            border-color: #d0d0d0;
+            background: linear-gradient(145deg, #f5f5f5, #eaeaea);
+        }
+
+        .card:active {
+            transform: scale(0.95);
+        }
+
+        .card.disabled {
+            background: linear-gradient(145deg, #d0d0d0, #b0b0b0);
+            cursor: not-allowed;
+            opacity: 0.65;
+            border-color: #a0a0a0;
+        }
+
+        .card.disabled:hover {
+            transform: none;
+        }
+
+        .card:not(.disabled):hover {
+            transform: scale(1.08);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.25);
+        }
+
+        .slot-area {
+            background: rgba(255,255,255,0.15);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 15px;
+            width: 100%;
+        }
+
+        .slot-label {
+            color: white;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+
+        .slot {
+            display: flex;
+            gap: 6px;
+            min-height: 65px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: nowrap;
+            padding: 5px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+        }
+
+        .card-layer-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #4caf50;
+            color: white;
+            font-size: 9px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .layer-1 .card-layer-badge {
+            background: #ff9800;
+        }
+
+        .layer-2 .card-layer-badge {
+            background: #f44336;
+        }
+
+        .slot-card {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(145deg, #ffffff, #f0f0f0);
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.6rem;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+            border: 2px solid rgba(255,255,255,0.9);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-30px) scale(0.8);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes remove {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.4) rotate(10deg);
+                opacity: 0.5;
+            }
+            100% {
+                transform: scale(0) rotate(30deg);
+                opacity: 0;
+            }
+        }
+
+        .slot-card.removing {
+            animation: remove 0.5s ease forwards;
+        }
+
+        .btn {
+            width: 100%;
+            max-width: 200px;
+            padding: 12px 30px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 25px;
+            background: linear-gradient(145deg, #ff6b6b, #ee5a5a);
+            color: white;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .btn-hint {
+            background: linear-gradient(145deg, #4caf50, #45a049);
+        }
+
+        .btn-row {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .card.hint-highlight {
+            animation: hintPulse 1s ease-in-out infinite;
+        }
+
+        @keyframes hintPulse {
+            0%, 100% {
+                box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+                border-color: #4caf50;
+            }
+            50% {
+                box-shadow: 0 0 25px rgba(76, 175, 80, 0.9), 0 0 50px rgba(76, 175, 80, 0.4);
+                border-color: #4caf50;
+            }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px 25px;
+            border-radius: 20px;
+            text-align: center;
+            width: 85%;
+            max-width: 320px;
+            animation: popIn 0.3s ease;
+        }
+
+        @keyframes popIn {
+            from {
+                transform: scale(0.5);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .modal-content h2 {
+            font-size: 1.6rem;
+            margin-bottom: 15px;
+        }
+
+        .modal-content p {
+            font-size: 1rem;
+            margin-bottom: 25px;
+            color: #666;
+        }
+
+        .win h2 {
+            color: #4caf50;
+        }
+
+        .lose h2 {
+            color: #f44336;
+        }
+
+        @media (max-width: 360px) {
+            .card {
+                width: 48px;
+                height: 48px;
+                font-size: 1.5rem;
+            }
+            .slot-card {
+                width: 42px;
+                height: 42px;
+                font-size: 1.4rem;
+            }
+            .game-board {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>🎮 消消乐</h1>
+    <div class="game-info">
+        <span>剩余: <span id="remaining">0</span></span>
+        <span>卡槽: <span id="slot-count">0</span>/7</span>
+    </div>
+
+    <div class="game-container">
+        <div class="game-board" id="game-board"></div>
+
+        <div class="slot-area">
+            <div class="slot-label">👇 卡槽区域 👇</div>
+            <div class="slot" id="slot"></div>
+        </div>
+
+        <div class="btn-row">
+            <button class="btn" onclick="restartGame()">重新开始</button>
+            <button class="btn btn-hint" onclick="showHint()">提示 💡</button>
+        </div>
+    </div>
+
+    <div class="modal" id="modal">
+        <div class="modal-content" id="modal-content">
+            <h2 id="modal-title"></h2>
+            <p id="modal-message"></p>
+            <button class="btn" onclick="restartGame()">再来一局</button>
+        </div>
+    </div>
+
+    <script>
+        const emojis = ['🐑', '🐮', '🐷', '🐔', '🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼'];
+        const CARD_COUNT_PER_TYPE = 3;
+        const MAX_SLOTS = 7;
+
+        let cards = [];
+        let slotCards = [];
+        let remainingCards = 0;
+        let cardWidth = 55;
+        let cardGap = 4;
+        let solutionSequence = [];
+        let hintCardId = null;
+        let removingCardIds = new Set();
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function getLayout() {
+            const width = window.innerWidth;
+            if (width < 360) {
+                return {
+                    cardWidth: 48,
+                    cardGap: 3,
+                    boardHeight: 300,
+                    layers: [
+                        { rows: 3, cols: 4, offsetX: 20, offsetY: 30 },
+                        { rows: 2, cols: 3, offsetX: 55, offsetY: 65 },
+                        { rows: 1, cols: 3, offsetX: 90, offsetY: 100 }
+                    ]
+                };
+            } else {
+                return {
+                    cardWidth: 55,
+                    cardGap: 4,
+                    boardHeight: 300,
+                    layers: [
+                        { rows: 4, cols: 5, offsetX: 20, offsetY: 30 },
+                        { rows: 3, cols: 4, offsetX: 65, offsetY: 75 },
+                        { rows: 2, cols: 2, offsetX: 110, offsetY: 120 }
+                    ]
+                };
+            }
+        }
+
+        function buildCardPositions(layout) {
+            let positions = [];
+            let cardIndex = 0;
+            for (let layerIndex = 0; layerIndex < layout.layers.length; layerIndex++) {
+                const layer = layout.layers[layerIndex];
+                for (let row = 0; row < layer.rows; row++) {
+                    for (let col = 0; col < layer.cols; col++) {
+                        positions.push({
+                            id: cardIndex,
+                            x: layer.offsetX + col * (layout.cardWidth + layout.cardGap),
+                            y: layer.offsetY + row * (layout.cardWidth + layout.cardGap),
+                            layer: layerIndex
+                        });
+                        cardIndex++;
+                    }
+                }
+            }
+            return positions;
+        }
+
+        function getOverlapGraph(positions) {
+            const padding = 3;
+            const size = cardWidth;
+            let blockedBy = {};
+            for (let i = 0; i < positions.length; i++) {
+                blockedBy[i] = [];
+            }
+            for (let i = 0; i < positions.length; i++) {
+                for (let j = 0; j < positions.length; j++) {
+                    if (i === j) continue;
+                    if (positions[j].layer > positions[i].layer) {
+                        if (!(positions[i].x + size - padding <= positions[j].x + padding ||
+                              positions[i].x + padding >= positions[j].x + size - padding ||
+                              positions[i].y + size - padding <= positions[j].y + padding ||
+                              positions[i].y + padding >= positions[j].y + size - padding)) {
+                            blockedBy[i].push(j);
+                        }
+                    }
+                }
+            }
+            return blockedBy;
+        }
+
+        function generateSolvableCards(positions) {
+            const totalCards = positions.length;
+            let totalRounded = totalCards;
+            while (totalRounded % CARD_COUNT_PER_TYPE !== 0) {
+                totalRounded++;
+            }
+
+            const typesNeeded = totalRounded / CARD_COUNT_PER_TYPE;
+            const selectedEmojis = shuffle([...emojis]).slice(0, Math.min(typesNeeded, emojis.length));
+
+            let cardList = [];
+            for (let i = 0; i < typesNeeded; i++) {
+                const emoji = selectedEmojis[i % selectedEmojis.length];
+                for (let j = 0; j < CARD_COUNT_PER_TYPE; j++) {
+                    cardList.push(emoji);
+                }
+            }
+
+            let remaining = positions.map((p, idx) => idx);
+            let blockedBy = getOverlapGraph(positions);
+            let reverseDeps = {};
+            for (let i = 0; i < positions.length; i++) {
+                reverseDeps[i] = [];
+            }
+            for (let i = 0; i < positions.length; i++) {
+                for (let blocker of blockedBy[i]) {
+                    reverseDeps[blocker].push(i);
+                }
+            }
+
+            let removed = new Set();
+            function isUnblocked(posIdx) {
+                for (let blocker of blockedBy[posIdx]) {
+                    if (!removed.has(blocker)) return false;
+                }
+                return true;
+            }
+
+            let solutionOrder = [];
+            let emojiAssignment = {};
+            let emojiGroups = [];
+            for (let g = 0; g < typesNeeded; g++) {
+                emojiGroups.push(cardList[g * 3]);
+            }
+            shuffle(emojiGroups);
+
+            let maxSlot = 7;
+            let groupIdx = 0;
+            let safetyLimit = 1000;
+
+            while (solutionOrder.length < totalRounded && safetyLimit > 0) {
+                safetyLimit--;
+                let available = remaining.filter(idx => isUnblocked(idx));
+
+                if (available.length === 0) break;
+
+                let bestPick = null;
+                let bestRemaining = null;
+                let bestScore = -Infinity;
+
+                for (let pick of available) {
+                    let remainingSet = new Set(remaining.filter(r => r !== pick));
+                    let currentAvailable = [...remainingSet].filter(idx => {
+                        let isBlocked = false;
+                        for (let blocker of blockedBy[idx]) {
+                            if (!removed.has(blocker) && remainingSet.has(blocker)) {
+                                isBlocked = true;
+                                break;
+                            }
+                        }
+                        return !isBlocked;
+                    });
+
+                    let score = currentAvailable.length;
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestPick = pick;
+                        bestRemaining = currentAvailable;
+                    }
+                }
+
+                let picksForGroup = [];
+                let tempRemoved = new Set(removed);
+
+                for (let round = 0; round < 3; round++) {
+                    let currentAvailable = remaining.filter(idx => {
+                        if (tempRemoved.has(idx)) return false;
+                        for (let blocker of blockedBy[idx]) {
+                            if (!tempRemoved.has(blocker)) return false;
+                        }
+                        return true;
+                    });
+
+                    if (currentAvailable.length === 0) {
+                        break;
+                    }
+
+                    let choice = currentAvailable[Math.floor(Math.random() * currentAvailable.length)];
+                    picksForGroup.push(choice);
+                    tempRemoved.add(choice);
+                }
+
+                if (picksForGroup.length === 3) {
+                    for (let pick of picksForGroup) {
+                        emojiAssignment[pick] = emojiGroups[groupIdx];
+                        solutionOrder.push(pick);
+                    }
+                    removed = tempRemoved;
+                    groupIdx++;
+                } else {
+                    let randomPick = available[Math.floor(Math.random() * available.length)];
+                    emojiAssignment[randomPick] = emojiGroups[groupIdx];
+                    solutionOrder.push(randomPick);
+                    removed.add(randomPick);
+                }
+            }
+
+            for (let idx of remaining) {
+                if (!emojiAssignment.hasOwnProperty(idx)) {
+                    emojiAssignment[idx] = emojiGroups[Math.floor(Math.random() * emojiGroups.length)];
+                    solutionOrder.push(idx);
+                }
+            }
+
+            let finalCards = [];
+            for (let pos of positions) {
+                finalCards.push({
+                    id: pos.id,
+                    emoji: emojiAssignment[pos.id],
+                    x: pos.x,
+                    y: pos.y,
+                    layer: pos.layer,
+                    removed: false
+                });
+            }
+
+            solutionSequence = solutionOrder;
+            return finalCards;
+        }
+
+        function getHintCard() {
+            let blockedBy = getOverlapGraph(cards);
+            let removed = new Set();
+            for (let card of cards) {
+                if (card.removed) removed.add(card.id);
+            }
+
+            function isUnblocked(cardId) {
+                for (let blocker of blockedBy[cardId]) {
+                    if (!removed.has(blocker) && !cards.find(c => c.id === blocker).removed) return false;
+                }
+                return true;
+            }
+
+            let slotCounts = {};
+            for (let card of slotCards) {
+                slotCounts[card.emoji] = (slotCounts[card.emoji] || 0) + 1;
+            }
+
+            let available = cards.filter(card => !card.removed && isUnblocked(card.id));
+
+            for (let card of available) {
+                if (slotCounts[card.emoji] === 2 && !slotCards.find(c => c.emoji === card.emoji && c.id === card.id)) {
+                    return card.id;
+                }
+            }
+
+            for (let card of available) {
+                if (slotCounts[card.emoji] === 1) {
+                    return card.id;
+                }
+            }
+
+            if (available.length > 0) {
+                return available[0].id;
+            }
+
+            return null;
+        }
+
+        function initGame() {
+            cards = [];
+            slotCards = [];
+            remainingCards = 0;
+            solutionSequence = [];
+            removingCardIds.clear();
+            hintCardId = null;
+
+            const layout = getLayout();
+            cardWidth = layout.cardWidth;
+            cardGap = layout.cardGap;
+
+            document.getElementById('game-board').style.height = layout.boardHeight + 'px';
+
+            let positions = buildCardPositions(layout);
+            let cardData = generateSolvableCards(positions);
+
+            cards = cardData;
+
+            remainingCards = cards.length;
+            updateInfo();
+            renderBoard();
+            renderSlot();
+        }
+
+        function isCardClickable(card) {
+            if (card.removed) return false;
+
+            for (let other of cards) {
+                if (other.id === card.id || other.removed) continue;
+                if (other.layer > card.layer) {
+                    if (checkOverlap(card, other)) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        function checkOverlap(card1, card2) {
+            const padding = 3;
+            return !(card1.x + cardWidth - padding <= card2.x + padding ||
+                     card1.x + padding >= card2.x + cardWidth - padding ||
+                     card1.y + cardWidth - padding <= card2.y + padding ||
+                     card1.y + padding >= card2.y + cardWidth - padding);
+        }
+
+        function renderBoard() {
+            const board = document.getElementById('game-board');
+            board.innerHTML = '';
+
+            const sortedCards = [...cards].sort((a, b) => {
+                if (a.layer !== b.layer) return a.layer - b.layer;
+                return a.y - b.y || a.x - b.x;
+            });
+
+            for (let card of sortedCards) {
+                if (card.removed) continue;
+
+                const cardEl = document.createElement('div');
+                cardEl.className = 'card';
+                cardEl.classList.add('layer-' + card.layer);
+                cardEl.textContent = card.emoji;
+                cardEl.style.left = card.x + 'px';
+                cardEl.style.top = card.y + 'px';
+                cardEl.style.width = cardWidth + 'px';
+                cardEl.style.height = cardWidth + 'px';
+                cardEl.style.zIndex = card.layer * 1000 + Math.floor(card.y) * 10 + Math.floor(card.x);
+                cardEl.style.fontSize = (cardWidth * 0.5) + 'px';
+
+                const clickable = isCardClickable(card);
+                if (!clickable) {
+                    cardEl.classList.add('disabled');
+                } else {
+                    cardEl.onclick = () => onCardClick(card);
+                    cardEl.ontouchstart = (e) => {
+                        e.preventDefault();
+                        onCardClick(card);
+                    };
+
+                    if (hintCardId !== null && card.id === hintCardId) {
+                        cardEl.classList.add('hint-highlight');
+                    }
+                }
+
+                board.appendChild(cardEl);
+            }
+        }
+
+        function onCardClick(card) {
+            if (slotCards.length >= MAX_SLOTS) return;
+            if (card.removed) return;
+            if (!isCardClickable(card)) return;
+
+            card.removed = true;
+            slotCards.push(card);
+            remainingCards--;
+            clearHint();
+
+            renderBoard();
+            renderSlot();
+            updateInfo();
+
+            setTimeout(() => {
+                checkAndRemove();
+            }, 150);
+
+            setTimeout(() => {
+                checkGameState();
+            }, 700);
+        }
+
+        function renderSlot() {
+            const slot = document.getElementById('slot');
+            slot.innerHTML = '';
+
+            for (let card of slotCards) {
+                const slotCardEl = document.createElement('div');
+                slotCardEl.className = 'slot-card';
+                slotCardEl.textContent = card.emoji;
+                slotCardEl.style.width = (cardWidth - 7) + 'px';
+                slotCardEl.style.height = (cardWidth - 7) + 'px';
+                slotCardEl.style.fontSize = ((cardWidth - 7) * 0.52) + 'px';
+                slot.appendChild(slotCardEl);
+            }
+        }
+
+        function checkAndRemove() {
+            const counts = {};
+            for (let card of slotCards) {
+                if (removingCardIds.has(card.id)) continue;
+                counts[card.emoji] = (counts[card.emoji] || 0) + 1;
+            }
+
+            let foundMatch = false;
+            for (let [emoji, count] of Object.entries(counts)) {
+                if (count >= 3) {
+                    foundMatch = true;
+                    let removeIndices = [];
+                    let countFound = 0;
+
+                    slotCards.forEach((card, index) => {
+                        if (card.emoji === emoji && !removingCardIds.has(card.id) && countFound < 3) {
+                            removeIndices.push(index);
+                            removingCardIds.add(card.id);
+                            countFound++;
+                        }
+                    });
+
+                    const slotElements = document.querySelectorAll('.slot-card');
+                    for (let index of removeIndices) {
+                        if (slotElements[index]) {
+                            slotElements[index].classList.add('removing');
+                        }
+                    }
+
+                    setTimeout(() => {
+                        removeIndices.sort((a, b) => b - a);
+                        for (let index of removeIndices) {
+                            slotCards.splice(index, 1);
+                        }
+                        removingCardIds.clear();
+                        renderSlot();
+                        updateInfo();
+                        renderBoard();
+                        checkGameState();
+                    }, 500);
+
+                    break;
+                }
+            }
+        }
+
+        function checkGameState() {
+            if (remainingCards === 0 && slotCards.length === 0) {
+                showModal(true);
+            } else if (slotCards.length >= MAX_SLOTS) {
+                const counts = {};
+                for (let card of slotCards) {
+                    counts[card.emoji] = (counts[card.emoji] || 0) + 1;
+                }
+                const hasThree = Object.values(counts).some(c => c >= 3);
+                if (!hasThree) {
+                    showModal(false);
+                }
+            }
+        }
+
+        function updateInfo() {
+            document.getElementById('remaining').textContent = remainingCards;
+            document.getElementById('slot-count').textContent = slotCards.length;
+        }
+
+        function showModal(isWin) {
+            const modal = document.getElementById('modal');
+            const modalContent = document.getElementById('modal-content');
+            const modalTitle = document.getElementById('modal-title');
+            const modalMessage = document.getElementById('modal-message');
+
+            modalContent.className = 'modal-content ' + (isWin ? 'win' : 'lose');
+            modalTitle.textContent = isWin ? '🎉 恭喜通关!' : '😢 游戏失败';
+            modalMessage.textContent = isWin ? '你成功消除了所有卡片!' : '卡槽已满，再接再厉!';
+
+            modal.classList.add('show');
+        }
+
+        function restartGame() {
+            document.getElementById('modal').classList.remove('show');
+            initGame();
+        }
+
+        function showHint() {
+            hintCardId = getHintCard();
+            renderBoard();
+            setTimeout(() => {
+                if (hintCardId !== null) {
+                    hintCardId = null;
+                    renderBoard();
+                }
+            }, 3000);
+        }
+
+        function clearHint() {
+            hintCardId = null;
+        }
+
+        window.addEventListener('resize', () => {
+            clearTimeout(window.resizeTimer);
+            window.resizeTimer = setTimeout(() => {
+                initGame();
+            }, 300);
+        });
+
+        initGame();
+
+        window.addEventListener('load', async () => {
+            if('serviceWorker' in navigator) {
+                try{
+                    const registration = await navigator.serviceWorker.register('sw.js')
+                }catch(err){
+                    console.log(err)
+                }
+            }else{
+                console.log('浏览器不支持service worker注册失败')
+            }
+            if(!navigator.onLine){
+                alert('本页面采用PWA技术，没有网络也能使用') 
+                new Notification('提示', {body: '本页面采用PWA技术，没有网络也能使用'});
+            }
+            window.addEventListener('online', ()=>{
+                alert('网络已连接') 
+                new Notification('提示', {body: '网络已连接'});
+            })
+        });        
+    </script>
+</body>
+</html>
