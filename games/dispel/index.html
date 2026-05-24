@@ -765,6 +765,7 @@
             for (let [emoji, count] of Object.entries(counts)) {
                 if (count >= 3) {
                     foundMatch = true;
+                    isProcessingRemoval = true;
                     let removeIndices = [];
                     let countFound = 0;
 
@@ -789,9 +790,11 @@
                             slotCards.splice(index, 1);
                         }
                         removingCardIds.clear();
+                        isProcessingRemoval = false;
                         renderSlot();
                         updateInfo();
                         renderBoard();
+                        checkAndRemove();
                         checkGameState();
                     }, 500);
 

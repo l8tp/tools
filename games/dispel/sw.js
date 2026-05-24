@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dispel_v1.2';
+const CACHE_NAME = 'dispel_v1.3';
 const CACHE_URLS = [
     'index.html',
     'sw.js',
