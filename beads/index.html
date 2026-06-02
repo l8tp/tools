@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>拼豆图案转换器</title>
+    <style>
+        :root {
+            --bg-primary: #FFF8F0;
+            --bg-secondary: #FFFFFF;
+            --accent-1: #FF6B6B;
+            --accent-2: #4ECDC4;
+            --accent-3: #FFE66D;
+            --accent-4: #95E1D3;
+            --text-primary: #2D3436;
+            --text-secondary: #636E72;
+            --border-color: #E0E0E0;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --shadow-hover: 0 8px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+            padding: 20px 40px;
+            text-align: center;
+            box-shadow: var(--shadow);
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            margin-bottom: 5px;
+        }
+
+        header p {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.1em;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 30px auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 30px;
+        }
+
+        .panel {
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: var(--shadow);
+        }
+
+        .panel h2 {
+            font-size: 1.4em;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid var(--accent-2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .upload-area {
+            border: 3px dashed var(--accent-2);
+            border-radius: 15px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, rgba(78, 205, 196, 0.05), rgba(255, 107, 107, 0.05));
+        }
+
+        .upload-area:hover {
+            border-color: var(--accent-1);
+            background: linear-gradient(135deg, rgba(78, 205, 196, 0.1), rgba(255, 107, 107, 0.1));
+        }
+
+        .upload-area.dragover {
+            border-color: var(--accent-1);
+            background: rgba(255, 107, 107, 0.15);
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 4em;
+            margin-bottom: 15px;
+        }
+
+        .upload-text {
+            font-size: 1.1em;
+            color: var(--text-secondary);
+        }
+
+        .upload-text span {
+            color: var(--accent-1);
+            font-weight: bold;
+            text-decoration: underline;
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 10px;
+            margin-top: 15px;
+            box-shadow: var(--shadow);
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .control-group .hint {
+            font-size: 0.85em;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: linear-gradient(to right, var(--accent-2), var(--accent-1));
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: white;
+            border: 3px solid var(--accent-1);
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .range-value {
+            display: inline-block;
+            background: var(--accent-3);
+            padding: 3px 12px;
+            border-radius: 15px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 1em;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        select:focus {
+            border-color: var(--accent-2);
+            outline: none;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px 28px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-1), #FF8E8E);
+            color: white;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary:disabled {
+            background: #CCCCCC;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--accent-2), #6EE7DE);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .preview-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .canvas-wrapper {
+            background: white;
+            border-radius: 15px;
+            overflow: auto;
+            max-height: 700px;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        #pattern-canvas {
+            display: block;
+            margin: 0 auto;
+            max-width: 300px;
+            max-height: 300px;
+        }
+
+        .placeholder {
+            text-align: center;
+            padding: 80px 20px;
+            color: var(--text-secondary);
+        }
+
+        .placeholder-icon {
+            font-size: 5em;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .stats-section {
+            background: white;
+            border-radius: 15px;
+        }
+
+        .stats-section h3 {
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            color: var(--text-primary);
+        }
+
+        .stats-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 15px;
+            background: var(--bg-primary);
+            border-radius: 10px;
+            min-width: 120px;
+        }
+
+        .stat-color {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7em;
+            font-weight: bold;
+            color: #333;
+            text-shadow: 0 0 2px rgba(255,255,255,0.8);
+        }
+
+        .stat-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-code {
+            font-weight: bold;
+            font-size: 0.95em;
+            color: var(--text-primary);
+        }
+
+        .stat-name {
+            font-size: 0.8em;
+            color: var(--text-secondary);
+        }
+
+        .stat-count {
+            font-weight: bold;
+            color: var(--accent-1);
+            font-size: 1.1em;
+            margin-left: auto;
+        }
+
+        .download-section {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid var(--border-color);
+            border-top-color: var(--accent-1);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .option-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .option-group label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            font-size: 0.95em;
+        }
+
+        .option-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent-1);
+        }
+
+        .algo-info {
+            background: #FFF3E0;
+            border-radius: 10px;
+            padding: 12px 15px;
+            margin-bottom: 15px;
+            font-size: 0.85em;
+            color: #E65100;
+            border-left: 4px solid #FF9800;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-secondary);
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 900px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1> 拼豆图案转换器</h1>
+        <p>将任意图片转换为拼豆制作图案</p>
+    </header>
+
+    <div class="container">
+        <aside class="panel">
+            <h2>📤 上传图片</h2>
+            <div class="upload-area" id="upload-area">
+                <div class="upload-icon">🖼️</div>
+                <div class="upload-text">
+                    拖拽图片到此处<br>
+                    或 <span>点击选择文件</span>
+                </div>
+                <input type="file" id="file-input" accept="image/*">
+                <img id="preview-img" class="preview-image" style="display: none;">
+            </div>
+
+            <h2 style="margin-top: 25px;">️ 转换设置</h2>
+            
+            <div class="control-group">
+                <label>网格宽度 <span class="range-value" id="width-value">30</span> 格</label>
+                <div class="hint">图案的横向拼豆数量</div>
+                <input type="range" id="grid-width" min="10" max="80" value="30">
+            </div>
+
+            <div class="control-group">
+                <label>网格高度 <span class="range-value" id="height-value">30</span> 格</label>
+                <div class="hint">图案的纵向拼豆数量</div>
+                <input type="range" id="grid-height" min="10" max="80" value="30">
+            </div>
+
+            <div class="control-group">
+                <label>颜色方案</label>
+                <select id="color-scheme">
+                    <option value="perler">Perler (102色)</option>
+                    <option value="hama">Hama (26色)</option>
+                    <option value="artkal">Artkal (72色)</option>
+                    <option value="basic">基础 (12色)</option>
+                </select>
+            </div>
+
+            <div class="option-group">
+                <label>
+                    <input type="checkbox" id="show-code" checked>
+                    显示颜色编码
+                </label>
+                <label>
+                    <input type="checkbox" id="show-grid" checked>
+                    显示5×5区域线
+                </label>
+                <label>
+                    <input type="checkbox" id="show-nums" checked>
+                    显示行列编号
+                </label>
+            </div>
+
+            <button class="btn btn-primary" id="convert-btn" disabled>
+                🔄 开始转换
+            </button>
+        </aside>
+
+        <main class="panel preview-container">
+            <h2>🎯 拼豆图案预览</h2>
+            
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <div>正在转换图案...</div>
+            </div>
+
+            <div class="canvas-wrapper" id="canvas-wrapper">
+                <div class="placeholder" id="placeholder">
+                    <div class="placeholder-icon">🎨</div>
+                    <div>上传图片并点击转换按钮<br>即可生成拼豆图案</div>
+                </div>
+                <canvas id="pattern-canvas" style="display: none;"></canvas>
+            </div>
+
+            <div class="stats-section" id="stats-section" style="display: none;">
+                <h3> 颜色统计</h3>
+                <div class="stats-grid" id="stats-grid"></div>
+            </div>
+
+            <div class="download-section" id="download-section" style="display: none;">
+                <button class="btn btn-secondary" id="download-pattern">
+                    下载图案（含统计）
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <footer>
+        拼豆图案转换器 | 支持Hama/Perler拼豆
+    </footer>
+
+    <script>
+        const PERLER_COLORS = {
+            perler: [
+                { code: "P1", name: "白色", hex: "#FFFFFF", rgb: [255, 255, 255] },
+                { code: "P2", name: "奶油色", hex: "#FFFDD0", rgb: [255, 253, 208] },
+                { code: "P3", name: "黄色", hex: "#FCEE21", rgb: [252, 238, 33] },
+                { code: "P4", name: "橙色", hex: "#F26522", rgb: [242, 101, 34] },
+                { code: "P5", name: "红色", hex: "#E3000F", rgb: [227, 0, 15] },
+                { code: "P6", name: "泡泡糖粉", hex: "#FF69B4", rgb: [255, 105, 180] },
+                { code: "P7", name: "紫色", hex: "#662D91", rgb: [102, 45, 145] },
+                { code: "P8", name: "深蓝", hex: "#1B2A4A", rgb: [27, 42, 74] },
+                { code: "P9", name: "蓝色", hex: "#0068B3", rgb: [0, 104, 179] },
+                { code: "P10", name: "浅蓝", hex: "#41B0E0", rgb: [65, 176, 224] },
+                { code: "P11", name: "深绿", hex: "#006400", rgb: [0, 100, 0] },
+                { code: "P12", name: "绿色", hex: "#00913C", rgb: [0, 145, 60] },
+                { code: "P13", name: "浅绿", hex: "#8DC63F", rgb: [141, 198, 63] },
+                { code: "P14", name: "棕色", hex: "#6D4C41", rgb: [109, 76, 65] },
+                { code: "P15", name: "浅棕", hex: "#C4A882", rgb: [196, 168, 130] },
+                { code: "P16", name: "肤色", hex: "#F5D0A9", rgb: [245, 208, 169] },
+                { code: "P17", name: "米色", hex: "#E8DCC4", rgb: [232, 220, 196] },
+                { code: "P18", name: "浅灰", hex: "#BDBDBD", rgb: [189, 189, 189] },
+                { code: "P19", name: "深灰", hex: "#616161", rgb: [97, 97, 97] },
+                { code: "P20", name: "黑色", hex: "#1A1A1A", rgb: [26, 26, 26] },
+                { code: "P21", name: "粉色", hex: "#E5007E", rgb: [229, 0, 126] },
+                { code: "P22", name: "薰衣草", hex: "#B39CD0", rgb: [179, 156, 208] },
+                { code: "P23", name: "薄荷绿", hex: "#98D8C8", rgb: [152, 216, 200] },
+                { code: "P24", name: "珊瑚粉", hex: "#F88379", rgb: [248, 131, 121] },
+                { code: "P25", name: "深红", hex: "#B51133", rgb: [181, 17, 51] },
+                { code: "P26", name: "铁锈色", hex: "#B7410E", rgb: [183, 65, 14] },
+                { code: "P27", name: "浅棕黄", hex: "#D4A574", rgb: [212, 165, 116] },
+                { code: "P28", name: "桃色", hex: "#FFB07C", rgb: [255, 176, 124] },
+                { code: "P29", name: "棕褐色", hex: "#C4A35A", rgb: [196, 163, 90] },
+                { code: "P30", name: "品红", hex: "#C71585", rgb: [199, 21, 133] },
+                { code: "P31", name: "淡蓝", hex: "#ADD8E6", rgb: [173, 216, 230] },
+                { code: "P32", name: "淡绿", hex: "#90EE90", rgb: [144, 238, 144] },
+                { code: "P33", name: "淡紫", hex: "#DDA0DD", rgb: [221, 160, 221] },
+                { code: "P34", name: "淡黄", hex: "#FFFF99", rgb: [255, 255, 153] },
+                { code: "P35", name: "切达色", hex: "#FFB347", rgb: [255, 179, 71] },
+                { code: "P36", name: "牙膏色", hex: "#B0E0E6", rgb: [176, 224, 230] },
+                { code: "P37", name: "热珊瑚", hex: "#FF6F61", rgb: [255, 111, 97] },
+                { code: "P38", name: "李子色", hex: "#8E4585", rgb: [142, 69, 133] },
+                { code: "P39", name: "猕猴桃绿", hex: "#8DB600", rgb: [141, 182, 0] },
+                { code: "P40", name: "绿松石", hex: "#40E0D0", rgb: [64, 224, 208] },
+                { code: "P41", name: "腮红", hex: "#FFB6C1", rgb: [255, 182, 193] },
+                { code: "P42", name: "长春花蓝", hex: "#8B8BFF", rgb: [139, 139, 255] },
+                { code: "P43", name: "浅粉", hex: "#FFB3BA", rgb: [255, 179, 186] },
+                { code: "P44", name: "绿色", hex: "#228B22", rgb: [34, 139, 34] },
+                { code: "P45", name: "粉色", hex: "#FFC0CB", rgb: [255, 192, 203] },
+                { code: "P46", name: "树莓", hex: "#E30B5C", rgb: [227, 11, 92] },
+                { code: "P47", name: "奶油焦糖", hex: "#DDA15E", rgb: [221, 161, 94] },
+                { code: "P48", name: "鹦鹉绿", hex: "#00FF7F", rgb: [0, 255, 127] },
+                { code: "P49", name: "深灰", hex: "#808080", rgb: [128, 128, 128] },
+                { code: "P50", name: "蓝莓奶油", hex: "#6B8E9B", rgb: [107, 142, 155] },
+                { code: "P51", name: "蔓越莓", hex: "#9B1B30", rgb: [155, 27, 48] },
+                { code: "P52", name: "仙人掌梨", hex: "#C71585", rgb: [199, 21, 133] },
+                { code: "P53", name: "沙色", hex: "#C2B280", rgb: [194, 178, 128] },
+                { code: "P54", name: "薄荷", hex: "#98FF98", rgb: [152, 255, 152] },
+                { code: "P55", name: "酸苹果", hex: "#BFFF00", rgb: [191, 255, 0] },
+                { code: "P56", name: "棉花糖", hex: "#FFB7C5", rgb: [255, 183, 197] },
+                { code: "P57", name: "葡萄", hex: "#6F2DA8", rgb: [111, 45, 168] },
+                { code: "P58", name: "玫瑰", hex: "#FF007F", rgb: [255, 0, 127] },
+                { code: "P59", name: "鸢尾", hex: "#5A4FCF", rgb: [90, 79, 207] },
+                { code: "P60", name: "橘子色", hex: "#FF8C00", rgb: [255, 140, 0] },
+                { code: "P61", name: "森林", hex: "#228B22", rgb: [34, 139, 34] },
+                { code: "P62", name: "茄子", hex: "#614051", rgb: [97, 64, 81] },
+                { code: "P63", name: "蜂蜜", hex: "#EB9605", rgb: [235, 150, 5] },
+                { code: "P64", name: "姜饼", hex: "#8B4513", rgb: [139, 69, 19] },
+                { code: "P65", name: "蓟色", hex: "#D8BFD8", rgb: [216, 191, 216] },
+                { code: "P66", name: "石板蓝", hex: "#6A5ACD", rgb: [106, 90, 205] },
+                { code: "P67", name: "牛仔蓝", hex: "#1560BD", rgb: [21, 96, 189] },
+                { code: "P68", name: "鼠尾草", hex: "#BCB88A", rgb: [188, 184, 138] },
+                { code: "P69", name: "橙奶油", hex: "#FFDAB9", rgb: [255, 218, 185] },
+                { code: "P70", name: "水果潘趣", hex: "#FF1493", rgb: [255, 20, 147] },
+                { code: "P71", name: "紫红", hex: "#FF00FF", rgb: [255, 0, 255] },
+                { code: "P72", name: "桑葚", hex: "#92000A", rgb: [146, 0, 10] },
+                { code: "P73", name: "粘液绿", hex: "#7FFF00", rgb: [127, 255, 0] },
+                { code: "P74", name: "石色", hex: "#928E85", rgb: [146, 142, 133] },
+                { code: "P75", name: "深云杉", hex: "#2F4F2F", rgb: [47, 79, 47] },
+                { code: "P76", name: "可可", hex: "#D2691E", rgb: [210, 105, 30] },
+                { code: "P77", name: "暮色梅", hex: "#7B3F7B", rgb: [123, 63, 123] },
+                { code: "P78", name: "加勒比海", hex: "#00CED1", rgb: [0, 206, 209] },
+                { code: "P79", name: "霜丁香", hex: "#E6D5E6", rgb: [230, 213, 230] },
+                { code: "P80", name: "砖红", hex: "#B22222", rgb: [178, 34, 34] },
+                { code: "P81", name: "富黄油", hex: "#FFD700", rgb: [255, 215, 0] },
+                { code: "P82", name: "孔雀", hex: "#008080", rgb: [0, 128, 128] },
+                { code: "P83", name: "霓虹蓝", hex: "#00FFFF", rgb: [0, 255, 255] },
+                { code: "P84", name: "向日葵", hex: "#FFDA03", rgb: [255, 218, 3] },
+                { code: "P85", name: "柠檬", hex: "#FFF44F", rgb: [255, 244, 79] },
+                { code: "P86", name: "芹菜", hex: "#C1E1C1", rgb: [193, 225, 193] },
+                { code: "P87", name: "摩卡", hex: "#967117", rgb: [150, 113, 23] },
+                { code: "P88", name: "珊瑚", hex: "#FF7F50", rgb: [255, 127, 80] },
+                { code: "P89", name: "常青", hex: "#006B3C", rgb: [0, 107, 60] },
+                { code: "P90", name: "浅灰", hex: "#D3D3D3", rgb: [211, 211, 211] },
+                { code: "P91", name: "薰衣草", hex: "#E6E6FA", rgb: [230, 230, 250] },
+                { code: "P92", name: "三叶草", hex: "#4CAF50", rgb: [76, 175, 80] },
+                { code: "P93", name: "钴蓝", hex: "#0047AB", rgb: [0, 71, 171] },
+                { code: "P94", name: "午夜", hex: "#191970", rgb: [25, 25, 112] },
+                { code: "P95", name: "知更鸟蛋", hex: "#96DED1", rgb: [150, 222, 209] },
+                { code: "P96", name: "火烈鸟", hex: "#FC8EAC", rgb: [252, 142, 172] },
+                { code: "P97", name: "鲑鱼", hex: "#FA8072", rgb: [250, 128, 114] },
+                { code: "P98", name: "小鹿", hex: "#C4A882", rgb: [196, 168, 130] },
+                { code: "P99", name: "锡镴", hex: "#9E9E9E", rgb: [158, 158, 158] },
+                { code: "P100", name: "木炭", hex: "#36454F", rgb: [54, 69, 79] },
+                { code: "P101", name: "烤棉花糖", hex: "#F5DEB3", rgb: [245, 222, 179] },
+                { code: "P102", name: "兰花", hex: "#DA70D6", rgb: [218, 112, 214] },
+            ],
+            hama: [
+                { code: "H1", name: "白色", hex: "#FFFFFF", rgb: [255, 255, 255] },
+                { code: "H2", name: "黑色", hex: "#1A1A1A", rgb: [26, 26, 26] },
+                { code: "H3", name: "浅灰", hex: "#C8C8C8", rgb: [200, 200, 200] },
+                { code: "H4", name: "深灰", hex: "#6B6B6B", rgb: [107, 107, 107] },
+                { code: "H5", name: "炭灰", hex: "#3D3D3D", rgb: [61, 61, 61] },
+                { code: "H6", name: "红色", hex: "#D32F2F", rgb: [211, 47, 47] },
+                { code: "H7", name: "深红", hex: "#8B0000", rgb: [139, 0, 0] },
+                { code: "H8", name: "橙色", hex: "#F57C00", rgb: [245, 124, 0] },
+                { code: "H9", name: "黄色", hex: "#FBC02D", rgb: [251, 192, 45] },
+                { code: "H10", name: "柠檬黄", hex: "#FFF176", rgb: [255, 241, 118] },
+                { code: "H11", name: "绿色", hex: "#388E3C", rgb: [56, 142, 60] },
+                { code: "H12", name: "浅绿", hex: "#8BC34A", rgb: [139, 195, 74] },
+                { code: "H13", name: "薄荷绿", hex: "#A5D6A7", rgb: [165, 214, 167] },
+                { code: "H14", name: "深蓝", hex: "#1565C0", rgb: [21, 101, 192] },
+                { code: "H15", name: "蓝色", hex: "#42A5F5", rgb: [66, 165, 245] },
+                { code: "H16", name: "浅蓝", hex: "#90CAF9", rgb: [144, 202, 249] },
+                { code: "H17", name: "紫色", hex: "#7B1FA2", rgb: [123, 31, 162] },
+                { code: "H18", name: "薰衣草", hex: "#BA68C8", rgb: [186, 104, 200] },
+                { code: "H19", name: "粉色", hex: "#EC407A", rgb: [236, 64, 122] },
+                { code: "H20", name: "浅粉", hex: "#F48FB1", rgb: [244, 143, 177] },
+                { code: "H21", name: "棕色", hex: "#6D4C41", rgb: [109, 76, 65] },
+                { code: "H22", name: "浅棕", hex: "#A1887F", rgb: [161, 136, 127] },
+                { code: "H23", name: "米色", hex: "#D7CCC8", rgb: [215, 204, 200] },
+                { code: "H24", name: "肤色", hex: "#FFCCBC", rgb: [255, 204, 188] },
+                { code: "H25", name: "橄榄绿", hex: "#689F38", rgb: [104, 159, 56] },
+                { code: "H26", name: "珊瑚粉", hex: "#FF8A65", rgb: [255, 138, 101] },
+            ],
+            artkal: [
+                { code: "A1", name: "白色", hex: "#FFFFFF", rgb: [255, 255, 255] },
+                { code: "A2", name: "黑色", hex: "#000000", rgb: [0, 0, 0] },
+                { code: "A3", name: "红色", hex: "#E60012", rgb: [230, 0, 18] },
+                { code: "A4", name: "深红", hex: "#9B111E", rgb: [155, 17, 30] },
+                { code: "A5", name: "橙色", hex: "#F7941D", rgb: [247, 148, 29] },
+                { code: "A6", name: "深橙", hex: "#E25822", rgb: [226, 88, 34] },
+                { code: "A7", name: "黄色", hex: "#FEDD00", rgb: [254, 221, 0] },
+                { code: "A8", name: "柠檬黄", hex: "#FFF44F", rgb: [255, 244, 79] },
+                { code: "A9", name: "绿色", hex: "#009B3A", rgb: [0, 155, 58] },
+                { code: "A10", name: "浅绿", hex: "#8BC34A", rgb: [139, 195, 74] },
+                { code: "A11", name: "深绿", hex: "#006B3C", rgb: [0, 107, 60] },
+                { code: "A12", name: "薄荷绿", hex: "#98D8C8", rgb: [152, 216, 200] },
+                { code: "A13", name: "蓝色", hex: "#0072BB", rgb: [0, 114, 187] },
+                { code: "A14", name: "浅蓝", hex: "#41B0E0", rgb: [65, 176, 224] },
+                { code: "A15", name: "深蓝", hex: "#003399", rgb: [0, 51, 153] },
+                { code: "A16", name: "天蓝", hex: "#87CEEB", rgb: [135, 206, 235] },
+                { code: "A17", name: "紫色", hex: "#6A0DAD", rgb: [106, 13, 173] },
+                { code: "A18", name: "浅紫", hex: "#B39CD0", rgb: [179, 156, 208] },
+                { code: "A19", name: "粉色", hex: "#E91E8C", rgb: [233, 30, 140] },
+                { code: "A20", name: "浅粉", hex: "#FFB6C1", rgb: [255, 182, 193] },
+                { code: "A21", name: "棕色", hex: "#6D4C41", rgb: [109, 76, 65] },
+                { code: "A22", name: "浅棕", hex: "#C4A882", rgb: [196, 168, 130] },
+                { code: "A23", name: "肤色", hex: "#F5D0A9", rgb: [245, 208, 169] },
+                { code: "A24", name: "米色", hex: "#E8DCC4", rgb: [232, 220, 196] },
+                { code: "A25", name: "浅灰", hex: "#C0C0C0", rgb: [192, 192, 192] },
+                { code: "A26", name: "深灰", hex: "#696969", rgb: [105, 105, 105] },
+                { code: "A27", name: "桃色", hex: "#FFB07C", rgb: [255, 176, 124] },
+                { code: "A28", name: "珊瑚", hex: "#FF7F50", rgb: [255, 127, 80] },
+                { code: "A29", name: "品红", hex: "#C71585", rgb: [199, 21, 133] },
+                { code: "A30", name: "薰衣草", hex: "#E6E6FA", rgb: [230, 230, 250] },
+                { code: "A31", name: "薄荷", hex: "#98FF98", rgb: [152, 255, 152] },
+                { code: "A32", name: "奶油", hex: "#FFFDD0", rgb: [255, 253, 208] },
+                { code: "A33", name: "沙色", hex: "#C2B280", rgb: [194, 178, 128] },
+                { code: "A34", name: "橄榄", hex: "#808000", rgb: [128, 128, 0] },
+                { code: "A35", name: "海军蓝", hex: "#000080", rgb: [0, 0, 128] },
+                { code: "A36", name: "蓝", hex: "#4B0082", rgb: [75, 0, 130] },
+                { code: "A37", name: "玫瑰", hex: "#FF007F", rgb: [255, 0, 127] },
+                { code: "A38", name: "鲑鱼", hex: "#FA8072", rgb: [250, 128, 114] },
+                { code: "A39", name: "砖红", hex: "#B22222", rgb: [178, 34, 34] },
+                { code: "A40", name: "可可", hex: "#D2691E", rgb: [210, 105, 30] },
+                { code: "A41", name: "鼠尾草", hex: "#BCB88A", rgb: [188, 184, 138] },
+                { code: "A42", name: "森林", hex: "#228B22", rgb: [34, 139, 34] },
+                { code: "A43", name: "孔雀", hex: "#008080", rgb: [0, 128, 128] },
+                { code: "A44", name: "绿松石", hex: "#40E0D0", rgb: [64, 224, 208] },
+                { code: "A45", name: "长春花", hex: "#8B8BFF", rgb: [139, 139, 255] },
+                { code: "A46", name: "李子", hex: "#8E4585", rgb: [142, 69, 133] },
+                { code: "A47", name: "树莓", hex: "#E30B5C", rgb: [227, 11, 92] },
+                { code: "A48", name: "蜂蜜", hex: "#EB9605", rgb: [235, 150, 5] },
+                { code: "A49", name: "姜饼", hex: "#8B4513", rgb: [139, 69, 19] },
+                { code: "A50", name: "蓟色", hex: "#D8BFD8", rgb: [216, 191, 216] },
+                { code: "A51", name: "石板蓝", hex: "#6A5ACD", rgb: [106, 90, 205] },
+                { code: "A52", name: "牛仔蓝", hex: "#1560BD", rgb: [21, 96, 189] },
+                { code: "A53", name: "紫红", hex: "#FF00FF", rgb: [255, 0, 255] },
+                { code: "A54", name: "桑葚", hex: "#92000A", rgb: [146, 0, 10] },
+                { code: "A55", name: "石色", hex: "#928E85", rgb: [146, 142, 133] },
+                { code: "A56", name: "深云杉", hex: "#2F4F2F", rgb: [47, 79, 47] },
+                { code: "A57", name: "暮色梅", hex: "#7B3F7B", rgb: [123, 63, 123] },
+                { code: "A58", name: "加勒比", hex: "#00CED1", rgb: [0, 206, 209] },
+                { code: "A59", name: "向日葵", hex: "#FFDA03", rgb: [255, 218, 3] },
+                { code: "A60", name: "芹菜", hex: "#C1E1C1", rgb: [193, 225, 193] },
+                { code: "A61", name: "摩卡", hex: "#967117", rgb: [150, 113, 23] },
+                { code: "A62", name: "铁锈", hex: "#B7410E", rgb: [183, 65, 14] },
+                { code: "A63", name: "棕褐", hex: "#C4A35A", rgb: [196, 163, 90] },
+                { code: "A64", name: "淡蓝", hex: "#ADD8E6", rgb: [173, 216, 230] },
+                { code: "A65", name: "淡绿", hex: "#90EE90", rgb: [144, 238, 144] },
+                { code: "A66", name: "淡紫", hex: "#DDA0DD", rgb: [221, 160, 221] },
+                { code: "A67", name: "淡黄", hex: "#FFFF99", rgb: [255, 255, 153] },
+                { code: "A68", name: "热珊瑚", hex: "#FF6F61", rgb: [255, 111, 97] },
+                { code: "A69", name: "猕猴桃", hex: "#8DB600", rgb: [141, 182, 0] },
+                { code: "A70", name: "腮红", hex: "#FFB6C1", rgb: [255, 182, 193] },
+                { code: "A71", name: "酸苹果", hex: "#BFFF00", rgb: [191, 255, 0] },
+                { code: "A72", name: "棉花糖", hex: "#FFB7C5", rgb: [255, 183, 197] },
+            ],
+            basic: [
+                { code: "B1", name: "白色", hex: "#FFFFFF", rgb: [255, 255, 255] },
+                { code: "B2", name: "黑色", hex: "#000000", rgb: [0, 0, 0] },
+                { code: "B3", name: "红色", hex: "#E3000F", rgb: [227, 0, 15] },
+                { code: "B4", name: "橙色", hex: "#F26522", rgb: [242, 101, 34] },
+                { code: "B5", name: "黄色", hex: "#FCEE21", rgb: [252, 238, 33] },
+                { code: "B6", name: "绿色", hex: "#00913C", rgb: [0, 145, 60] },
+                { code: "B7", name: "蓝色", hex: "#0068B3", rgb: [0, 104, 179] },
+                { code: "B8", name: "紫色", hex: "#662D91", rgb: [102, 45, 145] },
+                { code: "B9", name: "粉色", hex: "#E5007E", rgb: [229, 0, 126] },
+                { code: "B10", name: "棕色", hex: "#6D4C41", rgb: [109, 76, 65] },
+                { code: "B11", name: "浅灰", hex: "#BDBDBD", rgb: [189, 189, 189] },
+                { code: "B12", name: "肤色", hex: "#F5D0A9", rgb: [245, 208, 169] },
+            ]
+        };
+
+        let uploadedImage = null;
+        let currentPattern = null;
+
+        const uploadArea = document.getElementById('upload-area');
+        const fileInput = document.getElementById('file-input');
+        const previewImg = document.getElementById('preview-img');
+        const convertBtn = document.getElementById('convert-btn');
+        const canvas = document.getElementById('pattern-canvas');
+        const placeholder = document.getElementById('placeholder');
+        const loading = document.getElementById('loading');
+        const statsSection = document.getElementById('stats-section');
+        const statsGrid = document.getElementById('stats-grid');
+        const downloadSection = document.getElementById('download-section');
+
+        const gridWidthSlider = document.getElementById('grid-width');
+        const gridHeightSlider = document.getElementById('grid-height');
+        const colorSchemeSelect = document.getElementById('color-scheme');
+        const showCodeCheckbox = document.getElementById('show-code');
+        const showGridCheckbox = document.getElementById('show-grid');
+        const showNumsCheckbox = document.getElementById('show-nums');
+
+        const widthValue = document.getElementById('width-value');
+        const heightValue = document.getElementById('height-value');
+
+        gridWidthSlider.addEventListener('input', () => { widthValue.textContent = gridWidthSlider.value; });
+        gridHeightSlider.addEventListener('input', () => { heightValue.textContent = gridHeightSlider.value; });
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                handleImageUpload(file);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                handleImageUpload(file);
+            }
+        });
+
+        function handleImageUpload(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImg.src = e.target.result;
+                previewImg.style.display = 'block';
+                
+                const img = new Image();
+                img.onload = () => {
+                    uploadedImage = img;
+                    convertBtn.disabled = false;
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function weightedColorDistance(rgb1, rgb2) {
+            const rMean = (rgb1[0] + rgb2[0]) / 2;
+            const dr = rgb1[0] - rgb2[0];
+            const dg = rgb1[1] - rgb2[1];
+            const db = rgb1[2] - rgb2[2];
+            return Math.sqrt(
+                (2 + rMean / 256) * dr * dr +
+                4 * dg * dg +
+                (2 + (255 - rMean) / 256) * db * db
+            );
+        }
+
+        function mapToNearestColor(rgb, palette) {
+            let minDistance = Infinity;
+            let nearestColor = palette[0];
+            for (const color of palette) {
+                const distance = weightedColorDistance(rgb, color.rgb);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    nearestColor = color;
+                }
+            }
+            return nearestColor;
+        }
+
+        function generateBeadPattern(imageData, gridWidth, gridHeight, palette) {
+            const sourceWidth = imageData.width;
+            const sourceHeight = imageData.height;
+
+            const sampledCanvas = document.createElement('canvas');
+            sampledCanvas.width = gridWidth;
+            sampledCanvas.height = gridHeight;
+            const sCtx = sampledCanvas.getContext('2d');
+            
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = sourceWidth;
+            tempCanvas.height = sourceHeight;
+            const tCtx = tempCanvas.getContext('2d');
+            tCtx.putImageData(imageData, 0, 0);
+            
+            sCtx.drawImage(
+                tempCanvas,
+                0, 0, sourceWidth, sourceHeight,
+                0, 0, gridWidth, gridHeight
+            );
+            const sampledData = sCtx.getImageData(0, 0, gridWidth, gridHeight);
+
+            const grid = [];
+            const colorStats = new Map();
+
+            for (let y = 0; y < gridHeight; y++) {
+                const row = [];
+                for (let x = 0; x < gridWidth; x++) {
+                    const idx = (y * gridWidth + x) * 4;
+                    const rgb = [sampledData.data[idx], sampledData.data[idx + 1], sampledData.data[idx + 2]];
+                    const beadColor = mapToNearestColor(rgb, palette);
+                    row.push(beadColor);
+
+                    const key = beadColor.code;
+                    if (!colorStats.has(key)) {
+                        colorStats.set(key, { color: beadColor, count: 0 });
+                    }
+                    colorStats.get(key).count++;
+                }
+                grid.push(row);
+            }
+
+            return { grid, width: gridWidth, height: gridHeight, colorStats };
+        }
+
+        function getTextColor(hex) {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+            return brightness > 128 ? '#333333' : '#FFFFFF';
+        }
+
+        function renderBeadPattern(pattern, beadSize, showCode, showGrid, showNums) {
+            const ctx = canvas.getContext('2d');
+            const { grid, width, height } = pattern;
+            
+            const rowNumWidth = showNums ? 30 : 0;
+            const colNumHeight = showNums ? 25 : 0;
+            const padding = 10;
+            
+            canvas.width = width * beadSize + rowNumWidth + padding * 2;
+            canvas.height = height * beadSize + colNumHeight + padding * 2;
+            
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            const offsetX = padding + rowNumWidth;
+            const offsetY = padding + colNumHeight;
+            
+            if (showNums) {
+                ctx.fillStyle = '#666666';
+                ctx.font = '10px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                for (let x = 0; x < width; x++) {
+                    ctx.fillText(x + 1, offsetX + x * beadSize + beadSize / 2, padding + colNumHeight / 2);
+                }
+                
+                ctx.textAlign = 'right';
+                for (let y = 0; y < height; y++) {
+                    ctx.fillText(y + 1, padding + rowNumWidth - 5, offsetY + y * beadSize + beadSize / 2);
+                }
+            }
+            
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    const beadX = offsetX + x * beadSize;
+                    const beadY = offsetY + y * beadSize;
+                    const color = grid[y][x];
+                    
+                    ctx.beginPath();
+                    ctx.arc(
+                        beadX + beadSize / 2,
+                        beadY + beadSize / 2,
+                        (beadSize - 2) / 2,
+                        0,
+                        Math.PI * 2
+                    );
+                    ctx.fillStyle = color.hex;
+                    ctx.fill();
+                    
+                    ctx.strokeStyle = '#D0D0D0';
+                    ctx.lineWidth = 0.5;
+                    ctx.stroke();
+                    
+                    if (showCode) {
+                        const textColor = getTextColor(color.hex);
+                        const fontSize = Math.max(7, beadSize * 0.35);
+                        ctx.font = `bold ${fontSize}px Arial`;
+                        ctx.fillStyle = textColor;
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(color.code, beadX + beadSize / 2, beadY + beadSize / 2);
+                    }
+                }
+            }
+            
+            if (showGrid) {
+                ctx.strokeStyle = '#888888';
+                ctx.lineWidth = 1.5;
+                
+                for (let x = 0; x <= width; x += 5) {
+                    ctx.beginPath();
+                    ctx.moveTo(offsetX + x * beadSize, offsetY);
+                    ctx.lineTo(offsetX + x * beadSize, offsetY + height * beadSize);
+                    ctx.stroke();
+                }
+                
+                for (let y = 0; y <= height; y += 5) {
+                    ctx.beginPath();
+                    ctx.moveTo(offsetX, offsetY + y * beadSize);
+                    ctx.lineTo(offsetX + width * beadSize, offsetY + y * beadSize);
+                    ctx.stroke();
+                }
+            }
+            
+            ctx.strokeStyle = '#333333';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(offsetX, offsetY, width * beadSize, height * beadSize);
+        }
+
+        function renderStats(colorStats) {
+            statsGrid.innerHTML = '';
+            const sortedStats = Array.from(colorStats.values())
+                .sort((a, b) => b.count - a.count);
+            
+            sortedStats.forEach(stat => {
+                const item = document.createElement('div');
+                item.className = 'stat-item';
+                const textColor = getTextColor(stat.color.hex);
+                item.innerHTML = `
+                    <div class="stat-color" style="background: ${stat.color.hex}; color: ${textColor}">${stat.color.code}</div>
+                    <div class="stat-info">
+                        <span class="stat-code">${stat.color.code}</span>
+                        <span class="stat-name">${stat.color.name}</span>
+                    </div>
+                    <span class="stat-count">×${stat.count}</span>
+                `;
+                statsGrid.appendChild(item);
+            });
+        }
+
+        convertBtn.addEventListener('click', () => {
+            if (!uploadedImage) return;
+            
+            loading.classList.add('active');
+            placeholder.style.display = 'none';
+            canvas.style.display = 'none';
+            statsSection.style.display = 'none';
+            downloadSection.style.display = 'none';
+            
+            setTimeout(() => {
+                const offscreen = document.createElement('canvas');
+                offscreen.width = uploadedImage.width;
+                offscreen.height = uploadedImage.height;
+                const ctx = offscreen.getContext('2d');
+                ctx.drawImage(uploadedImage, 0, 0);
+                
+                const imageData = ctx.getImageData(0, 0, offscreen.width, offscreen.height);
+                
+                const gridWidth = parseInt(gridWidthSlider.value);
+                const gridHeight = parseInt(gridHeightSlider.value);
+                const beadSize = 30;
+                const scheme = colorSchemeSelect.value;
+                const palette = PERLER_COLORS[scheme];
+                
+                currentPattern = generateBeadPattern(imageData, gridWidth, gridHeight, palette);
+                
+                renderBeadPattern(currentPattern, beadSize, showCodeCheckbox.checked, showGridCheckbox.checked, showNumsCheckbox.checked);
+                renderStats(currentPattern.colorStats);
+                
+                canvas.style.display = 'block';
+                statsSection.style.display = 'block';
+                downloadSection.style.display = 'flex';
+                loading.classList.remove('active');
+            }, 100);
+        });
+
+        showCodeCheckbox.addEventListener('change', () => {
+            if (currentPattern) {
+                renderBeadPattern(currentPattern, 30, showCodeCheckbox.checked, showGridCheckbox.checked, showNumsCheckbox.checked);
+            }
+        });
+
+        showGridCheckbox.addEventListener('change', () => {
+            if (currentPattern) {
+                renderBeadPattern(currentPattern, 30, showCodeCheckbox.checked, showGridCheckbox.checked, showNumsCheckbox.checked);
+            }
+        });
+
+        showNumsCheckbox.addEventListener('change', () => {
+            if (currentPattern) {
+                renderBeadPattern(currentPattern, 30, showCodeCheckbox.checked, showGridCheckbox.checked, showNumsCheckbox.checked);
+            }
+        });
+
+        document.getElementById('download-pattern').addEventListener('click', () => {
+            if (!currentPattern) return;
+            
+            const { grid, width, height, colorStats } = currentPattern;
+            const scale = 3;
+            const beadSize = 24 * scale;
+            const rowNumWidth = 40 * scale;
+            const colNumHeight = 35 * scale;
+            const padding = 20 * scale;
+            
+            const sortedStats = Array.from(colorStats.values()).sort((a, b) => b.count - a.count);
+            
+            const statsItemHeight = 50 * scale;
+            const statsCols = Math.min(5, sortedStats.length);
+            const statsRows = Math.ceil(sortedStats.length / statsCols);
+            const statsItemWidth = 110 * scale;
+            const statsWidth = statsCols * statsItemWidth;
+            const statsAreaHeight = statsRows * statsItemHeight + 80 * scale;
+            
+            const patternWidth = width * beadSize + rowNumWidth + padding * 2;
+            const canvasWidth = Math.max(patternWidth, statsWidth + padding * 2);
+            const canvasHeight = height * beadSize + colNumHeight + padding * 2 + statsAreaHeight;
+            
+            const exportCanvas = document.createElement('canvas');
+            exportCanvas.width = canvasWidth;
+            exportCanvas.height = canvasHeight;
+            const ctx = exportCanvas.getContext('2d');
+            
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+            
+            const offsetX = padding + rowNumWidth;
+            const offsetY = padding + colNumHeight;
+            
+            ctx.fillStyle = '#666666';
+            ctx.font = `${12 * scale}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            for (let x = 0; x < width; x++) {
+                ctx.fillText(x + 1, offsetX + x * beadSize + beadSize / 2, padding + colNumHeight / 2);
+            }
+            ctx.textAlign = 'right';
+            for (let y = 0; y < height; y++) {
+                ctx.fillText(y + 1, padding + rowNumWidth - 8 * scale, offsetY + y * beadSize + beadSize / 2);
+            }
+            
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    const beadX = offsetX + x * beadSize;
+                    const beadY = offsetY + y * beadSize;
+                    const color = grid[y][x];
+                    
+                    ctx.beginPath();
+                    ctx.arc(beadX + beadSize / 2, beadY + beadSize / 2, (beadSize - 3 * scale) / 2, 0, Math.PI * 2);
+                    ctx.fillStyle = color.hex;
+                    ctx.fill();
+                    ctx.strokeStyle = '#D0D0D0';
+                    ctx.lineWidth = 1 * scale;
+                    ctx.stroke();
+                    
+                    const textColor = getTextColor(color.hex);
+                    const fontSize = Math.max(10 * scale, beadSize * 0.3);
+                    ctx.font = `bold ${fontSize}px Arial`;
+                    ctx.fillStyle = textColor;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(color.code, beadX + beadSize / 2, beadY + beadSize / 2);
+                }
+            }
+            
+            ctx.strokeStyle = '#888888';
+            ctx.lineWidth = 2 * scale;
+            for (let x = 0; x <= width; x += 5) {
+                ctx.beginPath();
+                ctx.moveTo(offsetX + x * beadSize, offsetY);
+                ctx.lineTo(offsetX + x * beadSize, offsetY + height * beadSize);
+                ctx.stroke();
+            }
+            for (let y = 0; y <= height; y += 5) {
+                ctx.beginPath();
+                ctx.moveTo(offsetX, offsetY + y * beadSize);
+                ctx.lineTo(offsetX + width * beadSize, offsetY + y * beadSize);
+                ctx.stroke();
+            }
+            
+            ctx.strokeStyle = '#333333';
+            ctx.lineWidth = 3 * scale;
+            ctx.strokeRect(offsetX, offsetY, width * beadSize, height * beadSize);
+            
+            const statsY = offsetY + height * beadSize + 20 * scale;
+            
+            ctx.fillStyle = '#333333';
+            ctx.font = `bold ${18 * scale}px Arial`;
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+            ctx.fillText('颜色统计', padding, statsY);
+            
+            let totalCount = 0;
+            sortedStats.forEach(stat => { totalCount += stat.count; });
+            
+            ctx.font = `${14 * scale}px Arial`;
+            ctx.fillText(`总计: ${totalCount} 颗 | 图案: ${width} × ${height} 格`, padding, statsY + 28 * scale);
+            
+            const startX = padding;
+            let col = 0;
+            let row = 0;
+            sortedStats.forEach((stat, index) => {
+                const x = startX + col * statsItemWidth;
+                const y = statsY + 60 * scale + row * statsItemHeight;
+                
+                const colorBoxSize = 30 * scale;
+                ctx.fillStyle = stat.color.hex;
+                ctx.fillRect(x, y, colorBoxSize, colorBoxSize);
+                ctx.strokeStyle = '#999';
+                ctx.lineWidth = 1.5 * scale;
+                ctx.strokeRect(x, y, colorBoxSize, colorBoxSize);
+                
+                ctx.fillStyle = '#333';
+                ctx.font = `bold ${13 * scale}px Arial`;
+                ctx.textAlign = 'left';
+                ctx.fillText(stat.color.code, x + colorBoxSize + 8 * scale, y + 10 * scale);
+                
+                ctx.font = `${12 * scale}px Arial`;
+                ctx.fillText(stat.color.name, x + colorBoxSize + 8 * scale, y + 26 * scale);
+                
+                ctx.fillStyle = '#E3000F';
+                ctx.font = `bold ${14 * scale}px Arial`;
+                ctx.textAlign = 'right';
+                ctx.fillText(`×${stat.count}`, x + statsItemWidth - 10 * scale, y + 18 * scale);
+                
+                col++;
+                if (col >= statsCols) {
+                    col = 0;
+                    row++;
+                }
+            });
+            
+            const link = document.createElement('a');
+            link.download = 'perler-bead-pattern.png';
+            link.href = exportCanvas.toDataURL('image/png');
+            link.click();
+        });
+    </script>
+</body>
+</html>
