@@ -23,12 +23,12 @@
             padding: 20px;
             gap: 80px;
         }
-        #gameContainer, .theGame{
+        #gameContainer, .theGame, .games{
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            gap: 20px;
+            gap: 10px;
         }
         @media screen and (min-width: 480px) {
             #gameContainer{
@@ -36,6 +36,11 @@
                 flex-wrap: wrap;
                 gap: 30px;
             }
+        }
+        .games{
+            background: #feddb9;
+            border-radius: 20px;
+            padding: 5px;
         }
         .theGame{
             gap: 2px;
@@ -68,29 +73,26 @@
 <body>
     <h1>欢迎来到我的小游戏</h1>
     <div id="gameContainer">
-        <div class="theGame">
-            <a href="bricks/index.html">🧱打砖块小游戏</a>
-            <p>手机安装到桌面，可以离线使用</p>
-        </div>
-        <div class="theGame">
-            <a href="minescan/index.html">💣扫雷小游戏</a>
-            <p>手机安装到桌面，可以离线使用</p>
-        </div>
-        <div class="theGame">
-            <a href="monopoly/index.html">💰大富翁小游戏</a>
-            <p>手机安装到桌面，可以离线使用</p>
-        </div>
-        <div class="theGame">
-            <a href="crossword/index.html">✍️成语填词</a>
-            <p>手机安装到桌面，可以离线使用</p>
-        </div>
-        <div class="theGame">
-            <a href="puzzle/index.html">🧩拼图小游戏</a>
-            <p>手机安装到桌面，可以离线使用</p>
-        </div>
-        <div class="theGame">
-            <a href="dispel/index.html">🃏消消乐小游戏</a>
-            <p>手机安装到桌面，可以离线使用</p>
+        <p>手机安装到桌面，可以离线使用</p>
+        <div class="games">
+            <div class="theGame">
+                <a href="bricks/index.html">🧱打砖块</a>
+            </div>
+            <div class="theGame">
+                <a href="minescan/index.html">💣扫雷</a>
+            </div>
+            <div class="theGame">
+                <a href="monopoly/index.html">💰大富翁</a>
+            </div>
+            <div class="theGame">
+                <a href="crossword/index.html">✍️成语填词</a>
+            </div>
+            <div class="theGame">
+                <a href="puzzle/index.html">🧩拼图</a>
+            </div>
+            <div class="theGame">
+                <a href="dispel/index.html">🃏消消乐</a>
+            </div>
         </div>
     </div>
 </body>
